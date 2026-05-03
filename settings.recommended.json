@@ -1,0 +1,45 @@
+{
+  "_comment": "Merge these permissions into your project's .claude/settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew *)",
+      "Bash(gradle *)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(git branch*)",
+      "Bash(git remote*)",
+      "Bash(find . *)",
+      "Bash(ls *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(wc *)",
+      "Bash(mkdir -p *)",
+      "Bash(docker *)",
+      "Bash(kubectl *)",
+      "WebFetch(domain:spring.io)",
+      "WebFetch(domain:kotlinlang.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:search.maven.org)",
+      "WebFetch(domain:gatling.io)",
+      "WebFetch(domain:www.jooq.org)",
+      "WebFetch(domain:micrometer.io)",
+      "WebFetch(domain:opentelemetry.io)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "mcp__codebase-memory-mcp__search_code",
+      "mcp__codebase-memory-mcp__search_graph",
+      "mcp__codebase-memory-mcp__get_architecture",
+      "mcp__codebase-memory-mcp__get_code_snippet",
+      "mcp__codebase-memory-mcp__trace_path",
+      "mcp__codebase-memory-mcp__query_graph",
+      "mcp__codebase-memory-mcp__index_status"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "Bash(git reset --hard*)",
+      "Bash(git checkout -- .)",
+      "Bash(rm -rf*)"
+    ]
+  }
+}

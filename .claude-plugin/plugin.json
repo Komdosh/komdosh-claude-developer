@@ -1,0 +1,7 @@
+{
+  "name": "komdosh-claude-developer",
+  "version": "0.1.0",
+  "description": "Backend dev plugin for Kotlin + Spring WebFlux/coroutines services",
+  "author": "Andrey Tabakov",
+  "keywords": ["kotlin", "spring", "webflux", "coroutines", "backend"]
+}

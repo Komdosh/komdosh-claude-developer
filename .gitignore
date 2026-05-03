@@ -1,1 +1,5 @@
 .example-claude
+.idea
+komdosh-claude-developer.iml
+.claude/settings.local.json
+docs/superpowers
