@@ -9,7 +9,7 @@
 [![Marketplace: self-hosted](https://img.shields.io/badge/Marketplace-self--hosted-2ea44f)](.claude-plugin/marketplace.json)
 [![Stack: Kotlin · Spring WebFlux · coroutines](https://img.shields.io/badge/stack-Kotlin%20%C2%B7%20Spring%20WebFlux%20%C2%B7%20coroutines-orange)](rules/spring-webflux.md)
 
-[**Install**](#install-in-30-seconds) · [**Tour**](#quick-tour) · [**QA suite**](#spotlight-the-qa-artifact-suite) · [**Conventions**](#conventions-enforced) · [**Authoring**](#authoring-this-plugin)
+[**Install**](#install-in-30-seconds) · [**Anatomy of a task**](#spotlight-anatomy-of-a-development-task) · [**Tour**](#quick-tour) · [**Conventions**](#conventions-enforced) · [**Authoring**](#authoring-this-plugin)
 
 </div>
 
@@ -34,7 +34,8 @@ This repo doubles as a **self-hosted single-plugin Claude Code marketplace** —
 | Generated migrations clash with the team's checksum-based history | [`migration-writer`](agents/migration-writer.md) emits idempotent Liquibase formatted SQL with `--changeset` headers, registered in the master changelog |
 | New endpoints leak persistence IDs, return raw exception messages, or mix HTTP concerns into the domain | [`rules/api-conventions.md`](rules/api-conventions.md) + [`rules/error-handling.md`](rules/error-handling.md) + [`rules/hexagonal.md`](rules/hexagonal.md) — enforced from the prompt down |
 | Architectural decisions get lost between Slack and code | [`/adr-new`](commands/adr-new.md) checks if an ADR is warranted, then delegates to [`adr-writer`](agents/adr-writer.md) — `docs/adr/NNNN-<slug>.md` with status, alternatives, trade-offs |
-| Manual QA is ad-hoc; smoke tests exist nowhere | The new **QA suite** generates a manual validation plan, a Newman-runnable Postman collection, and a self-contained HTML console — see [below](#spotlight-the-qa-artifact-suite) |
+| One agent does everything (writes code, tests, migrations, commits) and forgets half of it | 19 agents that **delegate** instead of overreach — see [anatomy of a task](#spotlight-anatomy-of-a-development-task) |
+| Manual QA is ad-hoc; no smoke suite for the dev or QA on the team | [`/qa-plan`](commands/qa-plan.md), [`/qa-postman`](commands/qa-postman.md), [`/qa-console`](commands/qa-console.md) generate a checklist, a Newman-runnable collection, and a self-contained HTML tester from your controllers |
 
 ## What you get
 
@@ -50,30 +51,52 @@ Agents are **narrowly scoped and delegate**:
 - `cleanuper` fixes detekt/ktlint without changing behaviour. `change-reviewer` scrutinises diffs across five dimensions. `service-readiness-auditor` audits the whole service for production-readiness.
 - `qa-plan-writer`/`qa-postman-writer`/`qa-console-writer` each emit one QA artifact and never modify production code.
 
-## Spotlight: the QA artifact suite
+## Spotlight: anatomy of a development task
 
-Three commands that resolve your service's HTTP surface (OpenAPI file → Springdoc runtime if running → static controller parse, in that order) and emit developer-friendly QA artifacts:
+A typical "add an endpoint" task isn't one big agent improvising — it's a chain of narrow specialists that hand off through skills. Run `/add-endpoint Order create` and this is what actually happens:
 
 ```text
-/qa-plan      →  docs/qa/manual-validation-plan.md
-                 Markdown checklist: prereqs · smoke journey · per-resource happy
-                 + error cases · observability checks · cross-cutting · teardown.
-                 Re-runs preserve checked boxes by step ID.
-
-/qa-postman   →  docs/qa/postman/<service>.postman_collection.json
-                 + per-environment files (local · dev · staging)
-                 v2.1 schema, pm.test assertions on status + content-type +
-                 problem+json shape, chained variables (POST → GET /:id),
-                 _errors/ subfolder per resource. Newman-runnable.
-
-/qa-console   →  docs/qa/qa-console.html
-                 Single self-contained file (inline CSS + vanilla JS, no CDN,
-                 no build step). Sidebar of endpoints, auto-generated forms
-                 from your DTOs, env switcher, persistent token field, request
-                 history, "copy as curl". Opens from file://.
+/add-endpoint Order create
+        │
+        ├─[skill]─ read-service-context
+        │           reads service.yaml + module layout + base package — once per session
+        │
+        ├─[skill]─ check-adr-required
+        │           is this hard to reverse, with ≥2 reasonable alternatives?
+        │           ├─ REQUIRED   → adr-writer drafts docs/adr/NNNN-<slug>.md FIRST
+        │           └─ NOT REQ'D  → continue
+        │
+        ├─[agent]─ backend-implementer
+        │           writes controller (suspend fun, no Mono/Flux), DTO, application port,
+        │           wires the boot module — never touches tests, migrations, or Gradle
+        │
+        ├─[agent]─ test-writer        ← delegated to, not embedded in backend-implementer
+        │           writes @WebFluxTest with @MockkBean for the service,
+        │           writes runTest unit tests for the application service via fakes
+        │
+        ├─[agent]─ migration-writer   ← only if the change needs a schema column
+        │           writes idempotent Liquibase formatted SQL with --changeset header
+        │           and registers it in db.changelog-master.yaml
+        │
+        ├─[agent]─ security-expert    ← only if auth scope changes
+        │           updates SecurityWebFilterChain, returns problem+json on 401/403
+        │
+        └─[skill]─ run-verification
+                    narrowest-first: :<module>:test → :boot:compileKotlin → detekt
+                    fails loudly per module — never runs ./gradlew build when narrower works
 ```
 
-All three share the [`discover-api-surface`](skills/discover-api-surface/SKILL.md) skill so endpoints, DTOs, sample values, and the auth scheme are read once and consistently across artifacts. The [`service-readiness-auditor`](agents/service-readiness-auditor.md) warns (never blocks) when these artifacts go stale relative to your controllers.
+Every step pulls in the matching `rules/*.md` from `CLAUDE.md`. The controller can't return `Mono<T>`, the service can't put `@Transactional` on a `suspend fun`, the migration can't have a non-formatted SQL header, the test can't use `runBlocking` — all caught in the prompt, not in code review.
+
+The same delegation pattern shows up across every command:
+
+| Command | Orchestrates |
+|---|---|
+| [`/add-migration`](commands/add-migration.md) | `migration-writer` → `run-verification` |
+| [`/review`](commands/review.md) | `change-reviewer` (5 dimensions; later dimensions defer if earlier ones have BLOCKERs) |
+| [`/service-health`](commands/service-health.md) | `service-readiness-auditor` → fixes BLOCKERs one at a time |
+| [`/test-fix`](commands/test-fix.md) | `test-writer` works through failures one class at a time |
+| [`/qa-plan`](commands/qa-plan.md) / [`/qa-postman`](commands/qa-postman.md) / [`/qa-console`](commands/qa-console.md) | share `discover-api-surface` to emit a manual checklist, a Newman-runnable Postman collection, and a self-contained HTML tester |
 
 ## Install in 30 seconds
 
