@@ -45,6 +45,11 @@
       "name": "komdosh-dev-spring-doc-revealer",
       "source": "./plugins/komdosh-dev-spring-doc-revealer",
       "description": "Smart source-documentation discovery for internal classes, project architecture, frameworks, libraries, and open-source. /doc-reveal <symbol|topic|library> backed by the doc-revealer agent and the reveal-source-docs skill. Walks a 10-step ladder from cheapest to most expensive — in-repo KDoc/Javadoc → project /docs/ → ~/.claude/docs-cache/ → MCP (codebase-memory, context7, ref-context) → canonical web URLs (docs.spring.io / javadoc.io / kotlinlang.org / GitHub) via WebFetch → WebSearch fallback → pre-indexed JAR listings → JAR decompilation as edge-case-only last resort. Caches resolved snippets to ~/.claude/docs-cache/ so repeat queries are instant. Read-only on project source. Requires komdosh-dev-spring-core."
+    },
+    {
+      "name": "komdosh-dev-spring-release",
+      "source": "./plugins/komdosh-dev-spring-release",
+      "description": "Release engineering for Kotlin + Spring services AND shared Kotlin libraries — two tracks, one plugin. Auto-detects which track applies (service.yaml `kind` field, or build heuristics) and runs the matching gates. Service track: /release-prep · /changelog · /version-bump · /release-notes · /rollback-playbook (forward-fix-aware). Library track: /release-prep · /changelog · /version-bump (ABI-aware) · /release-notes · /abi-check · /publish-prep · /deprecate-api. Ships release-coordinator + changelog-writer + library-publisher agents, six skills (detect-release-type, verify-release-readiness-service, verify-release-readiness-library, produce-rollback-playbook, produce-abi-report, check-publish-config), an advisory pre-tag hook, and rules/release-engineering.md. Requires komdosh-dev-spring-core."
     }
   ]
 }

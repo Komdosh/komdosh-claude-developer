@@ -1,0 +1,16 @@
+{
+  "_comment": "Plugin-shipped hooks for komdosh-dev-spring-release. Auto-loaded by Claude Code when this plugin is installed. The hook reads tool input as JSON from stdin and prints any notice to stderr — Claude Code surfaces stderr to the model.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/pre-tag-validation.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
