@@ -35,6 +35,11 @@
       "name": "komdosh-dev-spring-orchestrator",
       "source": "./plugins/komdosh-dev-spring-orchestrator",
       "description": "Top-level workflow supervisor + advisor + orchestrator. /lifecycle (status | next | orchestrate | audit) reads project state, computes a 16-gate pipeline (requirement → spec → ADR → plan → code → tests → migrations → preflight scans → verification → review → QA → readiness → PR), recommends the next action with rationale, and (with confirmation) chains the work toward 'ready to ship'. Detects which marketplace plugins are installed and skips inapplicable gates as N/A. Requires komdosh-dev-spring-core."
+    },
+    {
+      "name": "komdosh-dev-spring-revealer",
+      "source": "./plugins/komdosh-dev-spring-revealer",
+      "description": "Surfaces accumulated project knowledge — ADRs, specs, plans, notes, code-embedded // DECISION/RATIONALE/NOTE/WHY comments, commit archaeology, and any RAG/MCP-backed knowledge bases the developer has wired up (codebase-memory, lookstream-code-rag, Confluence/Notion/Linear, context7, ref-context). /reveal <query> (modes: survey / decision-trace / gap-find) returns a synthesised answer with inline citations, lists gaps explicitly, and recommends one concrete next step. Read-only; gracefully degrades when MCP isn't configured. Requires komdosh-dev-spring-core."
     }
   ]
 }
