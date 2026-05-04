@@ -3,7 +3,11 @@
   "displayName": "Kotlin/Spring Backend Developer",
   "version": "0.1.0",
   "description": "Backend dev plugin for Kotlin + Spring WebFlux/coroutines services. Ships 23 specialised agents, 17 slash commands, 9 mandatory skills, 12 rule documents, and 2 post-edit hooks — enforcing hexagonal architecture, coroutine safety, RFC 9457 error semantics, vendor-decoupled platform abstractions, and end-to-end QA artifact generation.",
-  "author": "Andrey Tabakov",
+  "author": {
+    "name": "Andrey Tabakov",
+    "email": "ave.tabakov@gmail.com",
+    "url": "https://github.com/komdosh"
+  },
   "homepage": "https://github.com/komdosh/komdosh-claude-developer",
   "repository": "https://github.com/komdosh/komdosh-claude-developer",
   "license": "MIT",
