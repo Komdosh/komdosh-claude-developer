@@ -40,6 +40,11 @@
       "name": "komdosh-dev-spring-revealer",
       "source": "./plugins/komdosh-dev-spring-revealer",
       "description": "Surfaces accumulated project knowledge — ADRs, specs, plans, notes, code-embedded // DECISION/RATIONALE/NOTE/WHY comments, commit archaeology, and any RAG/MCP-backed knowledge bases the developer has wired up (codebase-memory, lookstream-code-rag, Confluence/Notion/Linear, context7, ref-context). /reveal <query> (modes: survey / decision-trace / gap-find) returns a synthesised answer with inline citations, lists gaps explicitly, and recommends one concrete next step. Read-only; gracefully degrades when MCP isn't configured. Requires komdosh-dev-spring-core."
+    },
+    {
+      "name": "komdosh-dev-spring-doc-revealer",
+      "source": "./plugins/komdosh-dev-spring-doc-revealer",
+      "description": "Smart source-documentation discovery for internal classes, project architecture, frameworks, libraries, and open-source. /doc-reveal <symbol|topic|library> backed by the doc-revealer agent and the reveal-source-docs skill. Walks a 10-step ladder from cheapest to most expensive — in-repo KDoc/Javadoc → project /docs/ → ~/.claude/docs-cache/ → MCP (codebase-memory, context7, ref-context) → canonical web URLs (docs.spring.io / javadoc.io / kotlinlang.org / GitHub) via WebFetch → WebSearch fallback → pre-indexed JAR listings → JAR decompilation as edge-case-only last resort. Caches resolved snippets to ~/.claude/docs-cache/ so repeat queries are instant. Read-only on project source. Requires komdosh-dev-spring-core."
     }
   ]
 }

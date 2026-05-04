@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Claude Code Marketplace](https://img.shields.io/badge/Claude%20Code-Marketplace-blueviolet)](https://docs.claude.com/en/docs/claude-code)
-[![7 plugins](https://img.shields.io/badge/plugins-7-2ea44f)](.claude-plugin/marketplace.json)
+[![8 plugins](https://img.shields.io/badge/plugins-8-2ea44f)](.claude-plugin/marketplace.json)
 [![Stack: Kotlin · Spring WebFlux · coroutines](https://img.shields.io/badge/stack-Kotlin%20%C2%B7%20Spring%20WebFlux%20%C2%B7%20coroutines-orange)](plugins/komdosh-dev-spring-core/rules/spring-webflux.md)
 
 [**Install**](#install-in-30-seconds) · [**Plugins**](#what-ships-in-this-marketplace) · [**Anatomy of a task**](#anatomy-of-a-development-task) · [**Conventions**](#conventions-enforced-by-core) · [**Authoring**](#authoring-plugins-in-this-marketplace)
@@ -15,9 +15,9 @@
 
 ---
 
-> **One marketplace, seven focused plugins.** Install only what you need.
+> **One marketplace, eight focused plugins.** Install only what you need.
 
-`komdosh-claude-developer` is a **single-source Claude Code marketplace**. It ships seven composable plugins that share an opinionated stack (Kotlin + Spring WebFlux + coroutines, hexagonal architecture, RFC 9457 errors, jOOQ + Liquibase, Micrometer + OpenTelemetry). Pick the foundation plus whichever specialty workflows you actually use — add the orchestrator for top-down lifecycle guidance, and the revealer for RAG/MCP-backed knowledge retrieval.
+`komdosh-claude-developer` is a **single-source Claude Code marketplace**. It ships eight composable plugins that share an opinionated stack (Kotlin + Spring WebFlux + coroutines, hexagonal architecture, RFC 9457 errors, jOOQ + Liquibase, Micrometer + OpenTelemetry). Pick the foundation plus whichever specialty workflows you actually use — add the orchestrator for top-down lifecycle guidance, the revealer for RAG/MCP-backed decision-history retrieval, and the doc-revealer for smart source-documentation discovery.
 
 ## What ships in this marketplace
 
@@ -30,8 +30,9 @@
 | **[komdosh-dev-spring-extras](plugins/komdosh-dev-spring-extras/)** | `/upgrade` (one-library-at-a-time bumps with changelog awareness), `/detect-flakes` (re-run + classify + route), `/load-test-new` (Gatling scaffolder). | When the specific need arises. |
 | **[komdosh-dev-spring-orchestrator](plugins/komdosh-dev-spring-orchestrator/)** | `/lifecycle` (status / next / orchestrate / audit) backed by the `lifecycle-supervisor` agent and the `lifecycle-status` skill. Computes a 16-gate pipeline (requirement → spec → ADR → plan → code → tests → migrations → preflight scans → verification → review → QA → readiness → PR), recommends the next action, and (with confirmation) chains the work toward "ready to ship". Detects which marketplace plugins are installed and skips inapplicable gates as N/A. | You want top-down lifecycle guidance for AI agents — orientation at the start of a session, gate enforcement before you ship. |
 | **[komdosh-dev-spring-revealer](plugins/komdosh-dev-spring-revealer/)** | `/reveal <query>` (modes: survey / decision-trace / gap-find) backed by the `knowledge-revealer` agent and the `reveal-knowledge` skill. Multi-source retrieval over ADRs, specs, plans, notes, code-embedded `// DECISION:` / `// RATIONALE:` / `// NOTE:` / `// WHY:` comments, commit archaeology, and any RAG / MCP-backed knowledge bases (codebase-memory, lookstream-code-rag, Confluence/Notion/Linear, context7, ref-context). Synthesised answer with inline citations + gap list + one recommended next step. Read-only; gracefully degrades when MCP isn't configured. | You're an advanced AI user with RAG/MCP knowledge bases wired up, OR you have a non-trivial `docs/adr/` and want "have we decided this before" answered fast. |
+| **[komdosh-dev-spring-doc-revealer](plugins/komdosh-dev-spring-doc-revealer/)** | `/doc-reveal <symbol\|topic\|library>` backed by the `doc-revealer` agent and the `reveal-source-docs` skill. Walks a 10-step ladder from cheapest to most expensive — in-repo KDoc/Javadoc → project `/docs/` → `~/.claude/docs-cache/` → MCP (codebase-memory, context7, ref-context) → canonical web URLs (docs.spring.io / javadoc.io / kotlinlang.org / GitHub) via WebFetch → WebSearch fallback → pre-indexed JAR listings → JAR decompilation as edge-case-only last resort. Caches resolved snippets so repeat queries are instant. Read-only on project source. | You want **API meaning / signatures**, not decision history. Stop diving into JARs first — let the agent target the cheapest doc source. |
 
-Total: **25 agents · 20 commands · 12 mandatory skills · 12 rule documents · 2 post-edit hooks** distributed across seven plugins. Each is independently installable.
+Total: **26 agents · 21 commands · 13 mandatory skills · 12 rule documents · 2 post-edit hooks** distributed across eight plugins. Each is independently installable.
 
 ## Install in 30 seconds
 
@@ -46,6 +47,7 @@ Inside Claude Code:
 /plugin install komdosh-dev-spring-extras@komdosh-claude-developer      # for /upgrade /detect-flakes /load-test-new
 /plugin install komdosh-dev-spring-orchestrator@komdosh-claude-developer # for /lifecycle and top-down workflow guidance
 /plugin install komdosh-dev-spring-revealer@komdosh-claude-developer    # for /reveal and RAG/MCP-backed knowledge retrieval
+/plugin install komdosh-dev-spring-doc-revealer@komdosh-claude-developer # for /doc-reveal — smart source-documentation discovery
 /plugin
 ```
 
