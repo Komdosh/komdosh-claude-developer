@@ -1,0 +1,13 @@
+{
+  "name": "komdosh-claude-developer",
+  "owner": {
+    "name": "Andrey Tabakov"
+  },
+  "plugins": [
+    {
+      "name": "komdosh-claude-developer",
+      "source": "./",
+      "description": "Backend dev plugin for Kotlin + Spring WebFlux/coroutines services. 16 specialised agents, 11 slash commands, 3 mandatory skills, 10 rule documents enforcing hexagonal architecture, coroutine safety, and RFC 9457 errors."
+    }
+  ]
+}
