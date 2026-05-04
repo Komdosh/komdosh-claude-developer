@@ -211,6 +211,8 @@ The marketplace itself is described by the single [`.claude-plugin/marketplace.j
 
 There is no Gradle build, no test suite, and no CI for the plugins themselves. Verification is "does the prose still describe the agent's actual behaviour and the current rule references?" Each plugin's CLAUDE.md is the canonical map for that plugin.
 
+For mechanical hygiene, `tools/lint-marketplace.sh` runs ~100 static checks across all plugins: JSON validity, frontmatter on every agent/skill, markdown links resolve, hook bash syntax + executability, the `set -e + pipefail` grep-pipeline bug class (caught real bugs in `release` and `core` after a smoke pass against three Spring repos), and a few drift checks like "plugin.json name matches its directory" and "marketplace.json points at directories that exist." Run it before commit; it exits non-zero on any failure.
+
 ### Local development
 
 ```bash

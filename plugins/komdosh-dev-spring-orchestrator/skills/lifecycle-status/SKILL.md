@@ -227,34 +227,17 @@ Apply the rules below. For each gate emit a row of the table.
 
 These gates apply only when `komdosh-dev-spring-release` is installed. When the plugin is absent, all five report `N/A`.
 
-For gates 19–21, the gate is also conditional on **track**: detect the project's track (service vs library) once and skip the wrong-track gates:
+For gates 19–21, the gate is also conditional on **track** (service vs library). Do NOT re-implement detection here — invoke the canonical `read-service-context` skill (in core) which emits a structured `kind: service | library | unknown` field. This is the marketplace-wide single source of truth for track classification.
 
-```bash
-# track detection (mirrors release-coordinator Step 2)
-kind=""
-[ -f service.yaml ] && kind=$(grep -E '^kind:\s*' service.yaml | awk '{print $2}' | tr -d '"' | head -1)
-[ -f service.yml ] && kind=${kind:-$(grep -E '^kind:\s*' service.yml | awk '{print $2}' | tr -d '"' | head -1)}
-if [ -z "$kind" ]; then
-  # Recursive grep — multi-module Gradle repos apply plugins per-module, not at the root.
-  # `|| true` after each pipeline so a no-match grep doesn't abort under `set -e -o pipefail`.
-  has_publish=$(grep -rlE 'maven-publish' --include='build.gradle.kts' \
-                  --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
-  # Match runApplication<...>(...) directly — `*Application.kt` naming is convention, not load-bearing.
-  has_app=$(grep -rl 'runApplication<' --include='*.kt' \
-             --exclude-dir=build --exclude-dir=test --exclude-dir='.gradle' \
-             . 2>/dev/null | head -1 || true)
-  has_dockerfile=$(find . -maxdepth 3 -name 'Dockerfile' -not -path '*/build/*' 2>/dev/null | head -1 || true)
-  has_boot=$(grep -rlE 'org\.springframework\.boot' --include='build.gradle.kts' \
-               --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
-  # `runApplication<>` is the strongest signal — only appears in Spring Boot apps. `has_boot` is informational
-  # (often applied via buildSrc convention plugins, so missing from service build.gradle.kts).
-  if   [ -n "$has_app" ];                              then kind="service";
-  elif [ -n "$has_publish" ] && [ -z "$has_app" ];     then kind="library";
-  fi
-fi
+```text
+Use the kind field from read-service-context's output:
+  kind == "service"  → run gate 19 (rollback playbook); skip gates 20, 21 as N/A
+  kind == "library"  → skip gate 19 as N/A; run gates 20, 21
+  kind == "unknown"  → all five gates report UNKNOWN (not PENDING) and recommend
+                       setting `kind:` explicitly in service.yaml
 ```
 
-If `kind` cannot be determined, all five gates report `UNKNOWN` (not `PENDING`) and recommend setting `kind:` in `service.yaml`.
+If `read-service-context` was already invoked earlier in the session, reuse its output rather than re-invoking — the kind field doesn't change within a session.
 
 **Gate 17 — Release readiness.**
 - N/A if release plugin not installed.

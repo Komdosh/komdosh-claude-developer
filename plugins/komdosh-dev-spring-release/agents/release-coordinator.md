@@ -20,34 +20,17 @@ If the project's track cannot be determined, ask the user once, then proceed.
 
 ## Steps
 
-- [ ] **Step 1: Run `read-service-context` skill** if not already run this session. The skill emits `kind: service | library` if `service.yaml` declares it.
+- [ ] **Step 1: Run `read-service-context` skill** if not already run this session. The skill emits a structured `kind: service | library | unknown` field — that is the canonical track-detection logic for the entire marketplace.
 
 - [ ] **Step 2: Determine the track**
 
 Order of precedence:
 
 1. User override (`--track=...`).
-2. `service.yaml` `kind` field (from Step 1).
-3. Build heuristics. **All grep probes are recursive** because multi-module Gradle projects apply plugins per-module, not at the root. Append `|| true` to each pipeline — under `set -e -o pipefail`, a grep with no matches would otherwise abort the script.
-   ```bash
-   # In multi-module repos the spring-boot / maven-publish plugins are usually applied in submodule build.gradle.kts.
-   has_boot=$(grep -rlE 'org\.springframework\.boot|spring-boot' --include='build.gradle.kts' \
-                --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
-   has_publish=$(grep -rlE 'maven-publish|`maven-publish`' --include='build.gradle.kts' \
-                   --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
-   # Match runApplication<...>(...) directly — services name files <ServiceName>Application.kt, not literally Application.kt.
-   has_app=$(grep -rl 'runApplication<' --include='*.kt' \
-               --exclude-dir=build --exclude-dir=test --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
-   has_dockerfile=$(find . -maxdepth 3 -name 'Dockerfile' -not -path '*/build/*' 2>/dev/null | head -1 || true)
-   ```
-   `runApplication<>` is the strongest signal — it only appears in Spring Boot apps. `has_boot` is informational only because many repos apply Spring Boot via `buildSrc` convention plugins (e.g. `id("project.boot-conventions")`), in which case the actual `org.springframework.boot` reference lives in `buildSrc/src/main/kotlin/*.gradle.kts`, not in service `build.gradle.kts` files.
+2. `kind` from `read-service-context` (Step 1). If `kind == service` or `library`, use it directly. Do NOT re-implement the heuristics here — `read-service-context` already runs them in one place to prevent drift.
+3. If `kind == unknown` (the skill couldn't classify), ask the user once: "This project's track (service vs library) couldn't be determined. Pass `--track=service` or `--track=library`, or add `kind:` to `service.yaml`."
 
-   - `has_app` (anywhere) → **service**.
-   - `has_publish` AND not `has_app` → **library**.
-   - Neither → **unknown**; ask the user.
-4. If both heuristics hit or both miss → ask the user once.
-
-State: `track = service | library` plus the evidence used to decide.
+State: `track = service | library` plus the evidence used to decide (the skill's report includes the `source:` field — `service.yaml` vs `filesystem-discovery`).
 
 - [ ] **Step 3: Run the matching readiness skill**
 

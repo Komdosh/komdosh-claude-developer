@@ -16,8 +16,9 @@ esac
 
 project_root="${CLAUDE_PROJECT_DIR:-$PWD}"
 
-# locate the master changelog (first match)
-master=$(find "$project_root" -name 'db.changelog-master.yaml' -not -path '*/build/*' -not -path '*/.gradle/*' 2>/dev/null | head -1)
+# locate the master changelog (first match). `|| true` defends against pipefail aborts
+# in case `find` is ever swapped for a stricter helper that exits non-zero on no-match.
+master=$(find "$project_root" -name 'db.changelog-master.yaml' -not -path '*/build/*' -not -path '*/.gradle/*' 2>/dev/null | head -1 || true)
 [ -n "$master" ] || exit 0
 
 basename=$(basename "$file_path")
