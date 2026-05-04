@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Claude Code Marketplace](https://img.shields.io/badge/Claude%20Code-Marketplace-blueviolet)](https://docs.claude.com/en/docs/claude-code)
-[![10 plugins](https://img.shields.io/badge/plugins-10-2ea44f)](.claude-plugin/marketplace.json)
+[![11 plugins](https://img.shields.io/badge/plugins-11-2ea44f)](.claude-plugin/marketplace.json)
 [![Stack: Kotlin · Spring WebFlux · coroutines](https://img.shields.io/badge/stack-Kotlin%20%C2%B7%20Spring%20WebFlux%20%C2%B7%20coroutines-orange)](plugins/komdosh-dev-spring-core/rules/spring-webflux.md)
 
 [**Install**](#install-in-30-seconds) · [**Plugins**](#what-ships-in-this-marketplace) · [**Anatomy of a task**](#anatomy-of-a-development-task) · [**Conventions**](#conventions-enforced-by-core) · [**Authoring**](#authoring-plugins-in-this-marketplace)
@@ -15,9 +15,9 @@
 
 ---
 
-> **One marketplace, ten focused plugins.** Install only what you need.
+> **One marketplace, eleven focused plugins.** Install only what you need.
 
-`komdosh-claude-developer` is a **single-source Claude Code marketplace**. It ships ten composable plugins that share an opinionated stack (Kotlin + Spring WebFlux + coroutines, hexagonal architecture, RFC 9457 errors, jOOQ + Liquibase, Micrometer + OpenTelemetry). Pick the foundation plus whichever specialty workflows you actually use — add the orchestrator for top-down lifecycle guidance, the revealer for RAG/MCP-backed decision-history retrieval, the doc-revealer for smart source-documentation discovery, the release plugin when you're ready to cut a service deploy or publish a library, and the security plugin when you want a defensive audit before that ship.
+`komdosh-claude-developer` is a **single-source Claude Code marketplace**. It ships eleven composable plugins that share an opinionated stack (Kotlin + Spring WebFlux + coroutines, hexagonal architecture, RFC 9457 errors, jOOQ + Liquibase, Micrometer + OpenTelemetry). Pick the foundation plus whichever specialty workflows you actually use — add the orchestrator for top-down lifecycle guidance, the revealer for RAG/MCP-backed decision-history retrieval, the doc-revealer for smart source-documentation discovery, the release plugin when you're ready to cut a service deploy or publish a library, and the security plugin when you want a defensive audit before that ship.
 
 ## What ships in this marketplace
 
@@ -33,8 +33,9 @@
 | **[komdosh-dev-kotlin-doc-revealer](plugins/komdosh-dev-kotlin-doc-revealer/)** | `/doc-reveal <symbol\|topic\|library>` backed by the `doc-revealer` agent and the `reveal-source-docs` skill. Walks a 10-step ladder from cheapest to most expensive — in-repo KDoc/Javadoc → project `/docs/` → `~/.claude/docs-cache/` → MCP (codebase-memory, context7, ref-context) → canonical web URLs (docs.spring.io / javadoc.io / kotlinlang.org / GitHub) via WebFetch → WebSearch fallback → pre-indexed JAR listings → JAR decompilation as edge-case-only last resort. Caches resolved snippets so repeat queries are instant. Read-only on project source. | You want **API meaning / signatures**, not decision history. Stop diving into JARs first — let the agent target the cheapest doc source. |
 | **[komdosh-dev-spring-release](plugins/komdosh-dev-spring-release/)** | Release engineering for **services** AND **shared libraries** — two tracks, one plugin. Auto-detects which track applies and runs the matching gates. Service track: `/release-prep` · `/changelog` · `/version-bump` · `/release-notes` · `/rollback-playbook` (forward-fix-aware). Library track: same plus `/abi-check` · `/publish-prep` · `/deprecate-api` (ABI-load-bearing semver). Ships `release-coordinator` + `changelog-writer` + `library-publisher` agents, six skills, an advisory pre-tag hook, and `rules/release-engineering.md`. Stops at "release PR open" + (rollback playbook \| ABI report); never deploys, pushes tags, or merges. | You're cutting a service release (deploy + rollback playbook), or publishing a shared Kotlin library (Maven Central / GitHub Packages). |
 | **[komdosh-dev-spring-security](plugins/komdosh-dev-spring-security/)** | Defensive security audits — Spring-specific only (no commodity CVE/secret scanners). `/security-audit` composite + three narrowed entry points: `/auth-audit` (route ↔ `SecurityWebFilterChain` coverage matrix — flags unauthenticated `@RestController` handlers and shadowed permit-all rules), `/error-leakage-check` (RFC 9457 hygiene — no stack traces, SQL state, or persistence IDs in response bodies), `/jwt-rotation` (algorithm allowlist excludes `none`, JWK refresh, issuer + audience validators, no prod keys in test fixtures). Ships `security-auditor` agent, three skills, `rules/security-audit.md` classifying findings BLOCKER / WARNING / INFO. Read-only; produces `docs/security/` reports. Distinct from core's `security-expert` which writes filters; this audits what's already there. | You want a defensive audit before shipping a release, or you're after the Spring-specific findings (route↔filter coverage, RFC 9457 leakage) that generic security tools miss. |
+| **[komdosh-dev-spring-avro](plugins/komdosh-dev-spring-avro/)** | Avro schema authoring + the autogenerated event-DTO pipeline. `avro-schema-author` agent + `/avro-new-event` (toolchain detect → schema author → codegen verify → registry-subject hand-off), `/avro-evolve` (compat-aware bump: additive in-place vs versioned-up v2), `/avro-audit` (BLOCKER/WARNING/INFO report on schemas, codegen, registry config). Ships `discover-avro-toolchain` + `verify-schema-compat` skills and three rules (schemas, codegen, registry). Defaults to davidmc24/gradle-avro-plugin + Confluent Schema Registry; detects Apicurio and avro4k. Enforces T-first nullable unions, required `doc` fields, `decimal`/`uuid`/`timestamp-millis` logical types, aliases on rename, `BACKWARD` compat default, `auto.register.schemas=false` in prod, no inlined registry credentials. Sits upstream of `komdosh-dev-spring-events` — that plugin's consumers read the DTOs this plugin produces. | Your service consumes or produces Avro-encoded events on Kafka (or any registry-backed broker), and you want the schema/codegen/registry pipeline to follow conventions instead of "whatever the first contributor typed." |
 
-Total: **30 agents · 33 commands · 22 mandatory skills · 14 rule documents · 3 hooks** distributed across ten plugins. Each is independently installable.
+Total: **31 agents · 36 commands · 24 mandatory skills · 17 rule documents · 3 hooks** distributed across eleven plugins. Each is independently installable.
 
 ## Install in 30 seconds
 
@@ -52,6 +53,7 @@ Inside Claude Code:
 /plugin install komdosh-dev-kotlin-doc-revealer@komdosh-claude-developer # for /doc-reveal — smart source-documentation discovery
 /plugin install komdosh-dev-spring-release@komdosh-claude-developer      # for /release-prep, /changelog, /version-bump, /abi-check, /publish-prep, /deprecate-api, /rollback-playbook
 /plugin install komdosh-dev-spring-security@komdosh-claude-developer     # for /security-audit, /auth-audit, /error-leakage-check, /jwt-rotation
+/plugin install komdosh-dev-spring-avro@komdosh-claude-developer         # for /avro-new-event, /avro-evolve, /avro-audit and the avro-schema-author agent
 /plugin
 ```
 
