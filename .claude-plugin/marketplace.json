@@ -1,13 +1,35 @@
 {
   "name": "komdosh-claude-developer",
   "owner": {
-    "name": "Andrey Tabakov"
+    "name": "Andrey Tabakov",
+    "email": "ave.tabakov@gmail.com",
+    "url": "https://github.com/komdosh"
   },
   "plugins": [
     {
-      "name": "komdosh-claude-developer",
-      "source": "./",
-      "description": "Backend dev plugin for Kotlin + Spring WebFlux/coroutines services. 23 specialised agents, 17 slash commands, 9 mandatory skills, 12 rule documents, 2 post-edit hooks — enforcing hexagonal architecture, coroutine safety, RFC 9457 errors, vendor-decoupled platform abstractions, and end-to-end QA artifact generation."
+      "name": "komdosh-dev-spring-core",
+      "source": "./plugins/komdosh-dev-spring-core",
+      "description": "Must-have foundation for Kotlin + Spring WebFlux/coroutines services. 15 agents · 10 commands · 8 mandatory skills · 10 rule documents · 1 post-edit hook — enforcing hexagonal architecture, coroutine safety, RFC 9457 errors, and the persistence/observability/testing conventions every consumer service needs."
+    },
+    {
+      "name": "komdosh-dev-spring-events",
+      "source": "./plugins/komdosh-dev-spring-events",
+      "description": "Kafka / SQS / RabbitMQ consumer authoring. Adds the event-consumer-author agent and rules/event-consumers.md (manual offset/ack, mandatory idempotency, transient-vs-poison error policy, schema-registry DTOs, 8 forbidden patterns). Requires komdosh-dev-spring-core."
+    },
+    {
+      "name": "komdosh-dev-spring-qa",
+      "source": "./plugins/komdosh-dev-spring-qa",
+      "description": "End-to-end QA artifact generation. /qa-plan + /qa-postman + /qa-console — markdown checklist, Newman-runnable Postman collection, self-contained HTML console — all from a shared discover-api-surface skill (OpenAPI → Springdoc → static parse). Plus a PostToolUse hook that warns on stale plans. Requires komdosh-dev-spring-core."
+    },
+    {
+      "name": "komdosh-dev-spring-platform",
+      "source": "./plugins/komdosh-dev-spring-platform",
+      "description": "Audit application/ for vendor-coupling leaks (Micrometer, jOOQ, Reactor, Jackson, Kafka client, R2DBC) and stage abstractions into a leaf common/ module. /audit-leaks (audit + extract modes), platform-developer agent, rules/platform-module.md. Requires komdosh-dev-spring-core."
+    },
+    {
+      "name": "komdosh-dev-spring-extras",
+      "source": "./plugins/komdosh-dev-spring-extras",
+      "description": "Niche tooling — install only if needed. /upgrade (one-library-at-a-time bumps with changelog awareness), /detect-flakes (re-run + classify + route), /load-test-new (Gatling scaffolder). Requires komdosh-dev-spring-core."
     }
   ]
 }

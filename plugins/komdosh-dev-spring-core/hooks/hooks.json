@@ -1,0 +1,16 @@
+{
+  "_comment": "Plugin-shipped hooks for komdosh-dev-spring-core. Auto-loaded by Claude Code when this plugin is installed. Each hook script reads the tool input as JSON from stdin and prints any notice to stderr — Claude Code surfaces stderr to the model.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/migration-register-reminder.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "komdosh-dev-spring-core",
+  "displayName": "Kotlin/Spring Core",
+  "version": "0.2.0",
+  "description": "Must-have foundation for Kotlin + Spring WebFlux/coroutines services. Ships 15 agents, 10 slash commands, 8 mandatory skills, 10 rule documents, and 1 post-edit hook — enforcing hexagonal architecture, coroutine safety, RFC 9457 error semantics, and the persistence/observability/testing conventions every consumer service needs. Other capabilities (events, QA artifact generation, vendor-decoupling, dep upgrader, flake detector) ship as separate plugins in the same marketplace.",
+  "author": {
+    "name": "Andrey Tabakov",
+    "email": "ave.tabakov@gmail.com",
+    "url": "https://github.com/komdosh"
+  },
+  "homepage": "https://github.com/komdosh/komdosh-claude-developer",
+  "repository": "https://github.com/komdosh/komdosh-claude-developer",
+  "license": "MIT",
+  "keywords": [
+    "kotlin",
+    "spring",
+    "webflux",
+    "coroutines",
+    "backend",
+    "hexagonal",
+    "jooq",
+    "liquibase",
+    "testcontainers"
+  ]
+}
