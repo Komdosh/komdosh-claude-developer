@@ -34,7 +34,7 @@
     {
       "name": "komdosh-dev-spring-orchestrator",
       "source": "./plugins/komdosh-dev-spring-orchestrator",
-      "description": "Top-level workflow supervisor + advisor + orchestrator. /lifecycle (status | next | orchestrate | audit) reads project state, computes a 16-gate pipeline (requirement → spec → ADR → plan → code → tests → migrations → preflight scans → verification → review → QA → readiness → PR), recommends the next action with rationale, and (with confirmation) chains the work toward 'ready to ship'. Detects which marketplace plugins are installed and skips inapplicable gates as N/A. Requires komdosh-dev-spring-core."
+      "description": "Top-level workflow supervisor + advisor + orchestrator. /lifecycle (status | next | orchestrate | audit) reads project state, computes a 16-gate pipeline (requirement → spec → ADR → plan → code → tests → migrations → preflight scans → verification → review → QA → readiness → PR), recommends the next action with rationale, and (with confirmation) chains the work toward 'ready to ship'. Detects which marketplace plugins are installed and skips inapplicable gates as N/A. Also ships /recommend [task] + the recommend-plugin skill — reads the marketplace catalog at runtime and points sessions at the right plugin + agent/command/skill for the task at hand, with install hints. Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-spring-revealer",

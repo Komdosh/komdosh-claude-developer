@@ -7,8 +7,10 @@ This plugin adds a top-level workflow supervisor + advisor + orchestrator on top
 | Item | Purpose |
 |---|---|
 | Command [`/lifecycle`](commands/lifecycle.md) | `/lifecycle` (= status + next-action) · `/lifecycle status` · `/lifecycle next` · `/lifecycle orchestrate` · `/lifecycle audit <gate>` |
+| Command [`/recommend`](commands/recommend.md) | `/recommend [task description]` — wraps the `recommend-plugin` skill. Reads the marketplace catalog at runtime, matches the task signal against installed + known plugins, emits a primary recommendation + up to two alternates with rationale, exact invocation, and an install hint when the recommended plugin is missing. Read-only. |
 | Agent [`lifecycle-supervisor`](agents/lifecycle-supervisor.md) | Three modes — Status, Advise, Orchestrate. Recommends the highest-leverage next gate to address; with confirmation, invokes the corresponding command/agent and re-evaluates. Strict safety: never auto-invokes destructive actions, never bypasses gates 8–11 (fast preflight) before running gate 12 (full verification). Capped at 5 actions per orchestrate session. |
 | Skill [`lifecycle-status`](skills/lifecycle-status/SKILL.md) | Read-only. Inspects git state, working tree, doc files, and recent test results to compute a 16-gate map for the current branch. Detects which marketplace plugins are installed and emits `N/A` for gates whose underlying capability is absent. Returns a markdown table for humans + a JSON summary the supervisor parses. |
+| Skill [`recommend-plugin`](skills/recommend-plugin/SKILL.md) | Read-only. Reads the current task signal from session context, matches it against the seven marketplace plugins' capabilities, detects which are installed, and emits a primary recommendation + up to two alternates with rationale and exact invocation. Triggers on "which plugin / agent / command should I use for X?" or any moment a session is uncertain which marketplace capability fits. |
 
 ## The Gate Pipeline
 
