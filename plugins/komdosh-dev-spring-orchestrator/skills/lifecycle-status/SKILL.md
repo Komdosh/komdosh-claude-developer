@@ -233,13 +233,21 @@ kind=""
 [ -f service.yaml ] && kind=$(grep -E '^kind:\s*' service.yaml | awk '{print $2}' | tr -d '"' | head -1)
 [ -f service.yml ] && kind=${kind:-$(grep -E '^kind:\s*' service.yml | awk '{print $2}' | tr -d '"' | head -1)}
 if [ -z "$kind" ]; then
-  has_publish=$(grep -lE 'maven-publish' build.gradle.kts 2>/dev/null | head -1)
-  has_app=$(find . -name 'Application.kt' -not -path '*/build/*' -not -path '*/test/*' \
-             -exec grep -lE 'runApplication<' {} + 2>/dev/null | head -1)
-  has_dockerfile=$(find . -maxdepth 3 -name 'Dockerfile' | head -1)
-  has_boot=$(grep -lE 'org\.springframework\.boot' build.gradle.kts 2>/dev/null | head -1)
-  if [ -n "$has_publish" ] && [ -z "$has_boot" ] && [ -z "$has_app" ]; then kind="library";
-  elif [ -n "$has_boot" ] && [ -n "$has_app" ] && [ -n "$has_dockerfile" ]; then kind="service";
+  # Recursive grep — multi-module Gradle repos apply plugins per-module, not at the root.
+  # `|| true` after each pipeline so a no-match grep doesn't abort under `set -e -o pipefail`.
+  has_publish=$(grep -rlE 'maven-publish' --include='build.gradle.kts' \
+                  --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
+  # Match runApplication<...>(...) directly — `*Application.kt` naming is convention, not load-bearing.
+  has_app=$(grep -rl 'runApplication<' --include='*.kt' \
+             --exclude-dir=build --exclude-dir=test --exclude-dir='.gradle' \
+             . 2>/dev/null | head -1 || true)
+  has_dockerfile=$(find . -maxdepth 3 -name 'Dockerfile' -not -path '*/build/*' 2>/dev/null | head -1 || true)
+  has_boot=$(grep -rlE 'org\.springframework\.boot' --include='build.gradle.kts' \
+               --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
+  # `runApplication<>` is the strongest signal — only appears in Spring Boot apps. `has_boot` is informational
+  # (often applied via buildSrc convention plugins, so missing from service build.gradle.kts).
+  if   [ -n "$has_app" ];                              then kind="service";
+  elif [ -n "$has_publish" ] && [ -z "$has_app" ];     then kind="library";
   fi
 fi
 ```

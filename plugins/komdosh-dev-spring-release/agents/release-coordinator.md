@@ -28,15 +28,23 @@ Order of precedence:
 
 1. User override (`--track=...`).
 2. `service.yaml` `kind` field (from Step 1).
-3. Build heuristics:
+3. Build heuristics. **All grep probes are recursive** because multi-module Gradle projects apply plugins per-module, not at the root. Append `|| true` to each pipeline — under `set -e -o pipefail`, a grep with no matches would otherwise abort the script.
    ```bash
-   has_boot=$(grep -lE 'org\.springframework\.boot|spring-boot' build.gradle.kts settings.gradle.kts 2>/dev/null | head -1)
-   has_publish=$(grep -lE 'maven-publish|`maven-publish`' build.gradle.kts 2>/dev/null | head -1)
-   has_app=$(find . -name 'Application.kt' -not -path '*/build/*' -not -path '*/test/*' | xargs -I{} grep -l 'runApplication<' {} 2>/dev/null | head -1)
-   has_dockerfile=$(find . -maxdepth 3 -name 'Dockerfile' | head -1)
+   # In multi-module repos the spring-boot / maven-publish plugins are usually applied in submodule build.gradle.kts.
+   has_boot=$(grep -rlE 'org\.springframework\.boot|spring-boot' --include='build.gradle.kts' \
+                --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
+   has_publish=$(grep -rlE 'maven-publish|`maven-publish`' --include='build.gradle.kts' \
+                   --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
+   # Match runApplication<...>(...) directly — services name files <ServiceName>Application.kt, not literally Application.kt.
+   has_app=$(grep -rl 'runApplication<' --include='*.kt' \
+               --exclude-dir=build --exclude-dir=test --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
+   has_dockerfile=$(find . -maxdepth 3 -name 'Dockerfile' -not -path '*/build/*' 2>/dev/null | head -1 || true)
    ```
-   - `has_publish` AND not `has_boot` AND not `has_app` → **library**.
-   - `has_boot` AND `has_app` AND `has_dockerfile` (or k8s manifests under `infra/` / `deploy/`) → **service**.
+   `runApplication<>` is the strongest signal — it only appears in Spring Boot apps. `has_boot` is informational only because many repos apply Spring Boot via `buildSrc` convention plugins (e.g. `id("project.boot-conventions")`), in which case the actual `org.springframework.boot` reference lives in `buildSrc/src/main/kotlin/*.gradle.kts`, not in service `build.gradle.kts` files.
+
+   - `has_app` (anywhere) → **service**.
+   - `has_publish` AND not `has_app` → **library**.
+   - Neither → **unknown**; ask the user.
 4. If both heuristics hit or both miss → ask the user once.
 
 State: `track = service | library` plus the evidence used to decide.

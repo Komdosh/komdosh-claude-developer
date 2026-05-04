@@ -62,16 +62,23 @@ Take the longest common prefix of the listed packages as the service's base pack
 If `service.yaml` declared `kind`, use it. Otherwise infer from build:
 
 ```bash
-has_publish=$(grep -lE 'maven-publish|`maven-publish`' build.gradle.kts settings.gradle.kts 2>/dev/null | head -1)
-has_boot=$(grep -lE 'org\.springframework\.boot|spring-boot' build.gradle.kts settings.gradle.kts 2>/dev/null | head -1)
-has_app=$(find . -name 'Application.kt' -not -path '*/build/*' -not -path '*/test/*' \
-           -exec grep -lE 'runApplication<' {} + 2>/dev/null | head -1)
-has_dockerfile=$(find . -maxdepth 3 -name 'Dockerfile' | head -1)
+# Recursive grep across all build.gradle.kts files — multi-module Gradle repos apply plugins per-module, not at the root.
+# `|| true` after each pipeline so a no-match grep doesn't abort under `set -e -o pipefail`.
+has_publish=$(grep -rlE 'maven-publish|`maven-publish`' --include='build.gradle.kts' \
+                --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
+has_boot=$(grep -rlE 'org\.springframework\.boot|spring-boot' --include='build.gradle.kts' \
+             --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
+# Match runApplication<...>(...) directly — services name files <ServiceName>Application.kt, not literally Application.kt.
+has_app=$(grep -rl 'runApplication<' --include='*.kt' \
+           --exclude-dir=build --exclude-dir=test --exclude-dir='.gradle' \
+           . 2>/dev/null | head -1 || true)
+has_dockerfile=$(find . -maxdepth 3 -name 'Dockerfile' -not -path '*/build/*' 2>/dev/null | head -1 || true)
 
-if   [ -n "$has_publish" ] && [ -z "$has_boot" ] && [ -z "$has_app" ]; then kind="library"
-elif [ -n "$has_boot" ] && [ -n "$has_app" ] && [ -n "$has_dockerfile" ]; then kind="service"
-elif [ -n "$has_boot" ] && [ -n "$has_app" ]; then kind="service"   # boot app without Dockerfile is still a service
-else kind="unknown"
+# `runApplication<>` is the strongest signal — only appears in Spring Boot apps. `has_boot` is informational
+# (often applied via buildSrc convention plugins, so missing from service build.gradle.kts).
+if   [ -n "$has_app" ];                              then kind="service"
+elif [ -n "$has_publish" ] && [ -z "$has_app" ];     then kind="library"
+else                                                       kind="unknown"
 fi
 ```
 

@@ -22,6 +22,12 @@ Read-only. Never modifies files.
 - [ ] **Step 1: Locate the last release tag**
 
 ```bash
+# Guard: refuse on non-git working trees with a clear message.
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+  echo "not a git repository — detect-release-type cannot run without git history"
+  exit 1
+}
+
 last_tag=$(git describe --tags --abbrev=0 --match 'v[0-9]*' --exclude '*-rc*' --exclude '*-alpha*' --exclude '*-beta*' 2>/dev/null || echo "")
 
 if [ -z "$last_tag" ]; then

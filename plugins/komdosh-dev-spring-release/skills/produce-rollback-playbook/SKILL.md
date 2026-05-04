@@ -23,6 +23,15 @@ Refuses on the library track — libraries don't roll back.
 
 If `kind == library`, REFUSE.
 
+Also guard against non-git working trees:
+
+```bash
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+  echo "not a git repository — rollback playbook needs git history to identify added migrations"
+  exit 1
+}
+```
+
 - [ ] **Step 2: Determine the release window**
 
 Default: `$(git describe --tags --abbrev=0)..HEAD`. The caller (`/rollback-playbook` or `release-coordinator`) may pass an explicit version range.
