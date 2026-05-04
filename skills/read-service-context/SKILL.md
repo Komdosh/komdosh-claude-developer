@@ -44,12 +44,18 @@ find . -name "build.gradle.kts" \
 
 - [ ] **Step 4: Extract base package name**
 
+Read up to 5 candidate files and pick the most common package prefix — relying on the *first* file is fragile (license headers, generated code, jOOQ records, etc.):
+
 ```bash
-find . -name "*.kt" -path "*/main/*" -not -path "*/build/*" \
-  | head -1 \
-  | xargs head -1 2>/dev/null \
-  | grep '^package '
+find . -name "*.kt" -path "*/main/*" \
+  -not -path "*/build/*" -not -path "*/generated/*" \
+  | head -5 \
+  | xargs grep -h '^package ' 2>/dev/null \
+  | awk '{print $2}' \
+  | sort | uniq -c | sort -rn | head -3
 ```
+
+Take the longest common prefix of the listed packages as the service's base package. If results conflict, ask the user.
 
 - [ ] **Step 5: Summarize findings**
 

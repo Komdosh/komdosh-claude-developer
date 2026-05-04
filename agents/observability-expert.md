@@ -30,14 +30,32 @@ class OrderService(private val meterRegistry: MeterRegistry) {
         .register(meterRegistry)
 
     suspend fun create(command: CreateOrderCommand): Order {
-        return processingTimer.recordSuspend {
+        val start = System.nanoTime()
+        try {
             val order = doCreate(command)
             ordersCreated.increment()
-            order
+            return order
+        } finally {
+            processingTimer.record(System.nanoTime() - start, TimeUnit.NANOSECONDS)
         }
     }
 }
 ```
+
+Micrometer's `Timer` does not ship a `suspend`-aware `record` overload. Use the manual `nanoTime` pattern above, or define an inline extension once in `application/observability/`:
+
+```kotlin
+suspend inline fun <T> Timer.recordSuspending(crossinline block: suspend () -> T): T {
+    val start = System.nanoTime()
+    try {
+        return block()
+    } finally {
+        record(System.nanoTime() - start, TimeUnit.NANOSECONDS)
+    }
+}
+```
+
+Do **not** use `Timer.recordCallable` from a `suspend fun` — it expects a synchronous `Callable<T>` and will block the dispatcher.
 
 **Forbidden tags**: userId, orderId, email, requestId, or any per-request / per-entity value. Low-cardinality only.
 

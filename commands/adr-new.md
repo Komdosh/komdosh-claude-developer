@@ -39,13 +39,17 @@ Pass to `adr-writer`:
 - The next ADR number
 - Any alternatives mentioned by the user
 
-- [ ] **Step 6: Commit the ADR**
+- [ ] **Step 6: Suggest the commit (do not run it)**
+
+Print, but do not execute, the suggested commit:
 
 ```bash
-git add docs/adr/
+git add docs/adr/<file>
 git commit -m "docs: add ADR <number> — <decision-title>"
 ```
 
+The user runs the commit themselves, or asks you to.
+
 - [ ] **Step 7: Report**
 
-State: ADR number, title, file path, status (Accepted).
+State: ADR number, title, file path, status (Accepted), and that the commit was *suggested* but not executed.

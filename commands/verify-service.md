@@ -14,14 +14,24 @@ find . -name "build.gradle.kts" \
   | sed 's|/build.gradle.kts||' | sed 's|^\./||' | sort
 ```
 
-- [ ] **Step 2: Run run-verification skill**
+- [ ] **Step 2: Run run-verification skill per module**
 
-Run `run-verification` skill across all identified modules.
+The `run-verification` skill is module-targeted. Loop it once per module discovered in Step 1, in this order:
+1. `domain` and `application` first (fastest, fail loudly on logic errors)
+2. `adapters/inbound`, `adapters/outbound` next
+3. `boot` last
 
-The skill will:
-1. Run tests for all modules
-2. Run `:boot:compileKotlin` as a compile check
-3. Run detekt on all modules
+For the boot compile check, run it once at the end (not per module):
+```bash
+./gradlew :boot:compileKotlin 2>&1 | tail -20
+```
+
+For detekt, run once across all modules at the end:
+```bash
+./gradlew detekt 2>&1 | tail -30
+```
+
+If a module fails, fix it before moving to the next — do not batch failures.
 
 - [ ] **Step 3: Report full results**
 

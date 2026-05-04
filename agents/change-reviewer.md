@@ -47,7 +47,7 @@ You review diffs. You report across five dimensions in this fixed order — corr
 
 ## Report Format
 
-For each finding:
+For each finding in a fully-reviewed dimension:
 ```
 [DIMENSION] SEVERITY: <finding in one sentence>
 File: <path>:<line if known>
@@ -55,7 +55,19 @@ Why it matters: <one sentence>
 Fix: <concrete suggestion>
 ```
 
-SEVERITY is one of: `BLOCKER`, `WARNING`, `INFO`
+SEVERITY is one of: `BLOCKER`, `WARNING`, `INFO`.
+
+When earlier dimensions contain BLOCKERs, later dimensions collapse to a single line per dimension:
+```
+[OBSERVABILITY] DEFERRED: review skipped — fix correctness BLOCKERs first.
+[ABSTRACTION-QUALITY] DEFERRED: review skipped — fix correctness BLOCKERs first.
+```
+
+If a deferred dimension has an obviously-severe issue worth flagging anyway, emit one BLOCKER for it and skip the rest:
+```
+[ABSTRACTION-QUALITY] BLOCKER: domain/ imports org.springframework.* (rules/domain-purity.md violation).
+File: domain/src/main/kotlin/.../OrderId.kt:3
+```
 
 ## Narrowing Focus
 

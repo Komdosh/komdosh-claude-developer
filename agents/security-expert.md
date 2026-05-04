@@ -40,9 +40,14 @@ suspend fun protectedOperation(): Result {
 
 ## WebFlux Security Config Pattern
 
+CSRF is disabled here because the service is a stateless JWT API — CSRF protections are session/cookie-bound and add no value for bearer-token auth. Re-enable it for any cookie-authenticated path.
+
 ```kotlin
 @Bean
-fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain =
+fun securityWebFilterChain(
+    http: ServerHttpSecurity,
+    objectMapper: ObjectMapper
+): SecurityWebFilterChain =
     http
         .csrf { it.disable() }
         .authorizeExchange { spec ->
@@ -53,16 +58,31 @@ fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain =
         .oauth2ResourceServer { it.jwt { } }
         .exceptionHandling {
             it.authenticationEntryPoint { exchange, _ ->
-                exchange.response.statusCode = HttpStatus.UNAUTHORIZED
-                exchange.response.setComplete()
+                writeProblem(exchange, HttpStatus.UNAUTHORIZED, "Authentication required", objectMapper)
             }
             it.accessDeniedHandler { exchange, _ ->
-                exchange.response.statusCode = HttpStatus.FORBIDDEN
-                exchange.response.setComplete()
+                writeProblem(exchange, HttpStatus.FORBIDDEN, "Insufficient privileges", objectMapper)
             }
         }
         .build()
+
+private fun writeProblem(
+    exchange: ServerWebExchange,
+    status: HttpStatus,
+    detail: String,
+    objectMapper: ObjectMapper
+): Mono<Void> {
+    val problem = ProblemDetail.forStatusAndDetail(status, detail).apply {
+        instance = exchange.request.uri
+    }
+    exchange.response.statusCode = status
+    exchange.response.headers.contentType = MediaType.APPLICATION_PROBLEM_JSON
+    val buffer = exchange.response.bufferFactory().wrap(objectMapper.writeValueAsBytes(problem))
+    return exchange.response.writeWith(Mono.just(buffer))
+}
 ```
+
+Both 401 and 403 must serialize a `ProblemDetail` body with `application/problem+json` — never call `setComplete()` with an empty body. See `rules/error-handling.md`.
 
 ## After Changes
 

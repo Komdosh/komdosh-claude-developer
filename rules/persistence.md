@@ -29,15 +29,18 @@ db/changelog/
 └── V3__add-customer-email-column.sql
 ```
 
-Every changeset must be **idempotent** — safe to apply multiple times:
+Use Liquibase **formatted SQL**. Every file MUST start with `--liquibase formatted sql` and every changeset MUST have a `--changeset author:id` header so Liquibase tracks it by checksum. Statements must also be idempotent (safe to apply multiple times in lower environments):
 
 ```sql
--- V3__add-customer-email-column.sql
+--liquibase formatted sql
+
+--changeset team:V3-add-customer-email-column splitStatements:true
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_email VARCHAR(255);
 CREATE INDEX IF NOT EXISTS idx_orders_customer_email ON orders (customer_email);
+--rollback ALTER TABLE orders DROP COLUMN IF EXISTS customer_email;
 ```
 
-Never modify an applied changeset. Add a new one.
+**Never modify an applied changeset.** Liquibase tracks each changeset by checksum; a mismatch on the next deploy fails the boot. To change behaviour, add a new changeset.
 
 Register every new file in `db.changelog-master.yaml`:
 

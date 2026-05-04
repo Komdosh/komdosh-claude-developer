@@ -67,12 +67,13 @@ class OrderRepositoryIT {
         @Container
         @JvmStatic
         val postgres = PostgreSQLContainer<Nothing>("postgres:16-alpine")
+            .withDatabaseName("testdb")
 
         @DynamicPropertySource
         @JvmStatic
         fun props(registry: DynamicPropertyRegistry) {
             registry.add("spring.r2dbc.url") {
-                "r2dbc:postgresql://${postgres.host}:${postgres.firstMappedPort}/${postgres.databaseName}"
+                "r2dbc:postgresql://${postgres.host}:${postgres.firstMappedPort}/testdb"
             }
             registry.add("spring.r2dbc.username") { postgres.username }
             registry.add("spring.r2dbc.password") { postgres.password }

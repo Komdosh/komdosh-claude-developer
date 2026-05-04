@@ -10,9 +10,10 @@ You own infrastructure-as-code. You do not touch `build.gradle.kts` or service s
 
 ## Docker Compose (local development)
 
+The top-level `version:` key is deprecated in Compose v2 — omit it.
+
 ```yaml
 # docker-compose.yaml
-version: '3.8'
 services:
   db:
     image: postgres:16-alpine
@@ -23,7 +24,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U app"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-app} -d ${DB_NAME:-servicedb}"]
       interval: 5s
       timeout: 3s
       retries: 5

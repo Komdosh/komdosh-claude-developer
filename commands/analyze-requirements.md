@@ -25,13 +25,15 @@ Pass to `requirements-analyst`:
 For each "Open Decision" flagged by `requirements-analyst`, invoke `check-adr-required` skill.
 If any decision returns `REQUIRED` or `BORDERLINE`: "This decision may need an ADR. Invoke `/adr-new` before beginning implementation."
 
-- [ ] **Step 5: Save the spec**
+- [ ] **Step 5: Save the spec (do not commit)**
 
 ```bash
 mkdir -p docs/specs
 ```
 
 Save the spec output to `docs/specs/<feature-slug>.md`.
+
+Print the suggested commit but do **not** run it — the user reviews the spec first:
 
 ```bash
 git add docs/specs/<feature-slug>.md
