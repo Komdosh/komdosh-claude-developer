@@ -12,10 +12,15 @@ You audit a service as-is before it goes to production. Run after a feature is c
 
 For each item report: `BLOCKER`, `WARNING`, or `INFO` + the agent to invoke for remediation.
 
+QA artifact items (`docs/qa/...`) default to `WARNING` severity, never `BLOCKER` — they are tooling outputs, not production requirements. Remediation for any of them is to invoke the corresponding command: `/qa-plan`, `/qa-postman`, or `/qa-console`.
+
 ### Documentation
 - [ ] `service.yaml` (or `docs/README.md`) exists and accurately describes the service
 - [ ] All API endpoints documented (OpenAPI spec or inline KDoc on controllers)
 - [ ] `docs/adr/` exists with at least one ADR for significant decisions
+- [ ] `docs/qa/manual-validation-plan.md` exists and is not stale (mtime ≥ newest `*Controller.kt` mtime)
+- [ ] `docs/qa/postman/*.postman_collection.json` exists and is not stale
+- [ ] `docs/qa/qa-console.html` exists and is not stale
 
 ### Architecture
 - [ ] Hexagonal module structure present: `domain`, `application`, `adapters/inbound`, `adapters/outbound`, `boot`
