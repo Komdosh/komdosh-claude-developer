@@ -18,7 +18,6 @@ There is no application source code, no Gradle build, and no test suite in this 
 | `skills/<name>/SKILL.md` | Skills with explicit step checklists: `read-service-context`, `run-verification`, `check-adr-required` |
 | `rules/*.md` | Convention documents loaded by `CLAUDE.md` via `@rules/...` imports |
 | `settings.recommended.json` | Suggested `permissions.allow`/`deny` block for consumer projects to merge into `.claude/settings.json` |
-| `.example-claude/` | **Local reference only** (gitignored). Snapshot of one consumer project's `.claude/` directory — illustrative, not shipped. Do not edit as if it were the plugin's own settings. |
 
 ## Big picture: how the pieces collaborate
 
@@ -78,5 +77,6 @@ The 10 `rules/*.md` files below are loaded via `@rules/...` imports and apply to
 @rules/testing.md
 @rules/persistence.md
 @rules/observability.md
+@rules/event-consumers.md
 
 Never put a Co-Authored into commits
