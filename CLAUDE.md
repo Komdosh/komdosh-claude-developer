@@ -78,5 +78,6 @@ The 10 `rules/*.md` files below are loaded via `@rules/...` imports and apply to
 @rules/persistence.md
 @rules/observability.md
 @rules/event-consumers.md
+@rules/platform-module.md
 
 Never put a Co-Authored into commits
