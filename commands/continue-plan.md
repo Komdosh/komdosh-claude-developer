@@ -6,12 +6,17 @@ Resume an implementation plan one sub-task at a time. Reads the plan file, finds
 
 - [ ] **Step 1: Locate the active plan**
 
+Search the conventional plan locations in order. Stop at the first non-empty result:
+
 ```bash
-ls -t docs/superpowers/plans/*.md 2>/dev/null | head -5
+ls -t docs/plans/*.md docs/specs/*.md 2>/dev/null | head -5
 ```
+
+The plugin's canonical plan location is `docs/plans/`; `docs/specs/` holds analysis output produced by `/analyze-requirements`.
 
 If multiple plans exist, ask the user: "Which plan should I continue? (list the options)"
 If only one exists, use it.
+If none exist: "No plan found. Use `/analyze-requirements` to produce a spec, or write a plan in `docs/plans/`."
 
 - [ ] **Step 2: Read the plan and find state**
 
