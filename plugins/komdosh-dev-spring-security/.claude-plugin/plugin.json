@@ -1,0 +1,15 @@
+{
+  "name": "komdosh-dev-spring-security",
+  "displayName": "Kotlin/Spring Security Audit",
+  "version": "0.1.0",
+  "description": "Defensive security audits for Kotlin + Spring WebFlux services. Spring-specific only — no generic CVE/secret-scan wrappers (those are commodity tooling). /security-audit (composite sweep) · /auth-audit (route ↔ SecurityWebFilterChain coverage matrix — flags unauthenticated @RestController handlers) · /error-leakage-check (RFC 9457 responses must not include stack traces, SQL, or internal IDs in any non-prod profile + verify @ExceptionHandler maps unhandled Exception to 500 with correlation id only) · /jwt-rotation (JWK source freshness + rotation cadence + algorithm allowlist). Ships security-auditor agent, three skills, rules/security-audit.md. Read-only — never modifies code; produces docs/security/<topic>.md reports with findings classified BLOCKER / WARNING / INFO. Distinct from core's security-expert agent which WRITES auth filters; this AUDITS what's already there. Requires komdosh-dev-spring-core.",
+  "author": {
+    "name": "Andrey Tabakov",
+    "email": "ave.tabakov@gmail.com",
+    "url": "https://github.com/komdosh"
+  },
+  "homepage": "https://github.com/komdosh/komdosh-claude-developer",
+  "repository": "https://github.com/komdosh/komdosh-claude-developer",
+  "license": "MIT",
+  "keywords": ["kotlin", "spring", "security", "audit", "webflux", "spring-security", "rfc-9457", "jwt", "jwk", "owasp"]
+}

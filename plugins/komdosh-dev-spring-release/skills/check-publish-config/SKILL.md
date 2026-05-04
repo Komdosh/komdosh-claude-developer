@@ -46,7 +46,7 @@ If publishing to a release target: `version` MUST NOT contain `-SNAPSHOT`.
 
 ```bash
 ./gradlew :<module>:generatePomFileForMavenPublication 2>&1 | tail -10
-pom_file=$(find <module>/build/publications -name 'pom-default.xml' | head -1)
+pom_file=$(find <module>/build/publications -name 'pom-default.xml' 2>/dev/null | head -1 || true)
 [ -f "$pom_file" ] || { echo "POM not generated"; exit 1; }
 ```
 

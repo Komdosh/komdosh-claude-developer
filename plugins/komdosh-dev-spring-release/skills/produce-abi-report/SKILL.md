@@ -50,7 +50,7 @@ If absent OR baseline files do not exist:
   ```bash
   ./gradlew :module:jar 2>&1 | tail -20
   # Resolve the published jar at last_tag — if it was published to Maven Local or a known repo:
-  published_jar=$(find ~/.m2/repository -name "<artifact>-<last_tag-without-v>.jar" | head -1)
+  published_jar=$(find ~/.m2/repository -name "<artifact>-<last_tag-without-v>.jar" 2>/dev/null | head -1 || true)
   # If not found locally, ask the user to point at the published jar or use Backend C.
   ```
 

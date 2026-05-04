@@ -50,6 +50,11 @@
       "name": "komdosh-dev-spring-release",
       "source": "./plugins/komdosh-dev-spring-release",
       "description": "Release engineering for Kotlin + Spring services AND shared Kotlin libraries — two tracks, one plugin. Auto-detects which track applies (service.yaml `kind` field, or build heuristics) and runs the matching gates. Service track: /release-prep · /changelog · /version-bump · /release-notes · /rollback-playbook (forward-fix-aware). Library track: /release-prep · /changelog · /version-bump (ABI-aware) · /release-notes · /abi-check · /publish-prep · /deprecate-api. Ships release-coordinator + changelog-writer + library-publisher agents, six skills (detect-release-type, verify-release-readiness-service, verify-release-readiness-library, produce-rollback-playbook, produce-abi-report, check-publish-config), an advisory pre-tag hook, and rules/release-engineering.md. Requires komdosh-dev-spring-core."
+    },
+    {
+      "name": "komdosh-dev-spring-security",
+      "source": "./plugins/komdosh-dev-spring-security",
+      "description": "Defensive security audits for Kotlin + Spring WebFlux services. Spring-specific only — no commodity scanners. /security-audit composite + three narrowed entry points: /auth-audit (route ↔ SecurityWebFilterChain coverage matrix, flags unauthenticated handlers and shadowed permit-all rules), /error-leakage-check (RFC 9457 hygiene — no stack traces, SQL state, or persistence IDs in response bodies; catch-all Exception → 500 with correlation id), /jwt-rotation (ReactiveJwtDecoder presence, algorithm allowlist excludes `none` and prevents algorithm confusion, JWK refresh policy, issuer + audience validators, no prod keys in test fixtures). Ships security-auditor agent, three skills, rules/security-audit.md classifying findings as BLOCKER / WARNING / INFO. Read-only; never modifies code or extracts secrets. Distinct from core's security-expert which writes filters; this audits what's already there. Requires komdosh-dev-spring-core."
     }
   ]
 }
