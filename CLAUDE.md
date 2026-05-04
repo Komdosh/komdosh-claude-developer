@@ -18,7 +18,7 @@ There is no application source code, no Gradle build, and no test suite in this 
 | `skills/<name>/SKILL.md` | Skills with explicit step checklists: `read-service-context`, `run-verification`, `check-adr-required` |
 | `rules/*.md` | Convention documents loaded by `CLAUDE.md` via `@rules/...` imports |
 | `settings.recommended.json` | Suggested `permissions.allow`/`deny` block for consumer projects to merge into `.claude/settings.json` |
-| `.example-claude/` | Reference example of a consumer project's `.claude/` layout (do not edit as if it were the plugin's own settings) |
+| `.example-claude/` | **Local reference only** (gitignored). Snapshot of one consumer project's `.claude/` directory — illustrative, not shipped. Do not edit as if it were the plugin's own settings. |
 
 ## Big picture: how the pieces collaborate
 
@@ -37,11 +37,13 @@ Agents are scoped to one concern each and **delegate** rather than overreach:
 - `build-expert` owns Gradle/`libs.versions.toml`; `infra-expert` owns Docker/k8s/CI; `config-expert` owns `application.yaml` and Spring profiles. None of these touch business logic.
 - `cleanuper` fixes detekt/ktlint without changing behavior. `change-reviewer` reviews diffs across five dimensions; `service-readiness-auditor` audits the whole service.
 - `adr-writer` is invoked when `check-adr-required` skill returns REQUIRED/BORDERLINE — a within-service architectural decision must be captured in `docs/adr/NNNN-<slug>.md` *before* implementation.
+- `qa-plan-writer`, `qa-postman-writer`, and `qa-console-writer` each generate one QA artifact under `docs/qa/`. They share the `discover-api-surface` skill (OpenAPI file → Springdoc runtime if hinted → static controller parse) and never modify production code. Triggered by `/qa-plan`, `/qa-postman`, and `/qa-console` respectively. The `service-readiness-auditor` warns when these artifacts are missing or stale relative to controller mtimes (warn-level only — never a BLOCKER).
 
 Skills are mandatory checklists, not suggestions:
 - `read-service-context` — orients an agent to a consumer service (reads `service.yaml` or falls back to `docs/README.md` + filesystem discovery). Run **once per session**, not repeatedly.
 - `run-verification` — narrowest-first Gradle verification (`:<module>:test` → `:boot:compileKotlin` → `:<module>:detekt`). Required after any code change before reporting done. Never run `./gradlew build` when a narrower target works.
 - `check-adr-required` — REQUIRED iff (hard to reverse) ∧ (≥2 reasonable alternatives) ∧ (within service boundary).
+- `discover-api-surface` — resolves the service's HTTP surface into a normalised JSON IR for the QA artifact writers. Tries OpenAPI file, then Springdoc runtime if hinted, then static controller parse. Run **once per session** when generating multiple QA artifacts back-to-back.
 
 ## Conventions imported as rules
 

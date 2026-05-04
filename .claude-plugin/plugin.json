@@ -1,7 +1,21 @@
 {
   "name": "komdosh-claude-developer",
+  "displayName": "Kotlin/Spring Backend Developer",
   "version": "0.1.0",
-  "description": "Backend dev plugin for Kotlin + Spring WebFlux/coroutines services",
+  "description": "Backend dev plugin for Kotlin + Spring WebFlux/coroutines services. Ships 19 specialised agents, 14 slash commands, and 4 mandatory skills enforcing hexagonal architecture, coroutine safety, RFC 9457 error semantics, and end-to-end QA artifact generation.",
   "author": "Andrey Tabakov",
-  "keywords": ["kotlin", "spring", "webflux", "coroutines", "backend"]
+  "homepage": "https://github.com/komdosh/komdosh-claude-developer",
+  "repository": "https://github.com/komdosh/komdosh-claude-developer",
+  "license": "MIT",
+  "keywords": [
+    "kotlin",
+    "spring",
+    "webflux",
+    "coroutines",
+    "backend",
+    "hexagonal",
+    "jooq",
+    "liquibase",
+    "testcontainers"
+  ]
 }
