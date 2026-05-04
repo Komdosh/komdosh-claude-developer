@@ -1,7 +1,7 @@
 ---
 name: load-test-scaffolder
 model: sonnet
-description: "Scaffolds Gatling Kotlin load-test simulations for a service. Creates load-tests/ leaf module, Gradle wiring, and simulation skeleton over the service's HTTP surface with realistic ramp profiles. Triggers on: 'add load test', 'scaffold performance test', 'Gatling simulation', 'load testing', 'perf test'."
+description: "Scaffolds Gatling Kotlin load-test simulations for a service. Creates load-tests/ leaf module, Gradle wiring, and simulation skeleton over the service's HTTP surface with realistic ramp profiles. Triggers on: 'add load test', 'scaffold performance test', 'Gatling simulation', 'create load testing harness', 'new perf test simulation'. Do NOT match if the user wants to *audit* existing perf or capacity (that's `service-readiness-auditor` in core), interpret existing run results, or analyze profiles — this agent only scaffolds new simulations."
 ---
 
 # Load Test Scaffolder

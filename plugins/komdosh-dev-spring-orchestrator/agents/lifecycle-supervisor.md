@@ -18,7 +18,7 @@ If the mode is ambiguous, default to **Advise**.
 
 ## The Gate Pipeline
 
-The 16 gates from [`lifecycle-status`](../skills/lifecycle-status/SKILL.md), in execution order. This is the canonical reference:
+The 21 gates from [`lifecycle-status`](../skills/lifecycle-status/SKILL.md), in execution order. This is the canonical reference:
 
 ```text
 1. Requirement captured            (text or ticket)
@@ -40,9 +40,29 @@ The 16 gates from [`lifecycle-status`](../skills/lifecycle-status/SKILL.md), in 
 14. QA artifacts fresh              (only if komdosh-dev-spring-qa installed)
 15. Service readiness               (/service-health → service-readiness-auditor)
 16. PR description ready            (/pr-summary)
+─────  release engineering (only if komdosh-dev-spring-release installed)  ─────
+17. Release readiness               (skill: verify-release-readiness-{service,library})
+18. Changelog up to date            (CHANGELOG.md head section references HEAD or release PR)
+19. Rollback playbook present       (service track only — docs/release/playbooks/<version>.md)
+20. ABI delta reviewed              (library track only — docs/release/abi-<version>.md)
+21. Publish config valid            (library track only — skill: check-publish-config)
 ```
 
 Gates earlier in the list are typically cheaper and faster to fix than gates later. The supervisor recommends the **first PENDING-or-UNKNOWN gate** by default, because addressing gates out of order tends to cause rework (e.g. running full verification before fixing a coroutine-safety violation wastes minutes).
+
+### Gate applicability — skip rule (formal)
+
+Gates that depend on a non-installed plugin OR on the wrong track are reported as `N/A`, never as `PENDING`. The rule:
+
+1. **Plugin-conditional gates** — skipped if the required plugin is not installed:
+   - Gate 14 → `komdosh-dev-spring-qa`
+   - Gates 17–21 → `komdosh-dev-spring-release`
+2. **Track-conditional gates** — within the release plugin, skipped on the wrong track:
+   - Gate 19 (rollback playbook) → service track only; library track reports `N/A`.
+   - Gates 20 + 21 (ABI delta + publish config) → library track only; service track reports `N/A`.
+3. **Change-conditional gates** — skipped when the diff has no relevant signals (no Kotlin changes → gate 9 N/A, no SQL changes → gate 7 N/A, etc. — see `lifecycle-status` for full rules).
+
+The orchestrator NEVER blocks a release because of a gate that is `N/A`. Future plugins follow the same rule: the plugin's gates are added to this pipeline; lifecycle-status reports them as `N/A` when the plugin or its applicable conditions are absent.
 
 ## Recommended Action Per Gate
 
@@ -66,6 +86,11 @@ When recommending, name the specific command, agent, or skill. Prefer commands w
 | 14 — QA artifacts fresh | Run `/qa-plan`, `/qa-postman`, `/qa-console` (in qa plugin) for whichever artifacts are stale. Skip with N/A if the qa plugin is not installed. |
 | 15 — Service readiness | Run `/service-health` (in core). |
 | 16 — PR description | Run `/pr-summary` (in core). |
+| 17 — Release readiness | Run `/release-prep` (release plugin). The command auto-detects track and runs the matching readiness skill. |
+| 18 — Changelog | Run `/changelog` (release plugin). Conventional Commits → grouped CHANGELOG.md entry. |
+| 19 — Rollback playbook (service) | Run `/rollback-playbook` (release plugin). Refuses on library track. |
+| 20 — ABI delta (library) | Run `/abi-check` (release plugin). Refuses on service track. |
+| 21 — Publish config (library) | Run `/publish-prep` (release plugin). Refuses on service track. |
 
 ## Steps
 
@@ -142,19 +167,19 @@ Lifecycle session summary
 **Safe to auto-invoke** (orchestrate mode, auto mode, low-risk):
 
 - Any **read-only skill**: `lifecycle-status`, `module-boundary-check`, `coroutine-safety-scan`, `liquibase-changeset-immutability`, `jooq-generation-freshness`, `check-adr-required`, `read-service-context`, `discover-api-surface`.
-- Any **doc-generation command** that overwrites a known generated file under `docs/qa/` and prints the suggested commit (does not commit): `/qa-plan`, `/qa-postman`, `/qa-console`, `/pr-summary`.
+- Any **doc-generation command** that overwrites a known generated file under `docs/qa/` or `docs/release/` and prints the suggested commit (does not commit): `/qa-plan`, `/qa-postman`, `/qa-console`, `/pr-summary`, `/changelog`, `/release-notes`, `/rollback-playbook`, `/abi-check`, `/publish-prep`.
 - Reading `gh pr view` etc.
 
 **Always confirm first** (even in auto mode):
 
-- Any agent that writes Kotlin source files (`backend-implementer`, `test-writer`, `migration-writer`, `security-expert`, `observability-expert`, `cleanuper`, `service-bootstrapper`, `event-consumer-author`, `platform-developer`).
+- Any agent that writes Kotlin source files (`backend-implementer`, `test-writer`, `migration-writer`, `security-expert`, `observability-expert`, `cleanuper`, `service-bootstrapper`, `event-consumer-author`, `platform-developer`, `library-publisher` when in deprecate mode, `release-coordinator` when applying a version bump).
 - Any command that runs Gradle (`/verify-service`, `/test-fix`) — these can be long.
 - Any command that may produce a commit suggestion the user needs to actually review (`/add-endpoint`, `/add-migration`, `/upgrade`, `/audit-leaks --extract`).
 - Anything involving `git commit`, `git push`, `git reset`, `git checkout`, `git rebase`, `gh pr create`, `gh pr merge`.
 
 **Never auto-invoke** (always require explicit user instruction, even outside orchestrate mode):
 
-- `git push`, `git push --force`, `gh pr merge`, `gh release create`, deploy commands.
+- `git push`, `git push --force`, `gh pr merge`, `gh release create`, `git tag` (signing), `./gradlew publish` (library publish), deploy commands.
 - Any `Bash` running `rm -rf`, `kubectl delete`, `docker volume rm`, `git clean -fd`.
 - `/upgrade` for major version bumps (the agent itself flags these and stops; supervisor MUST NOT override).
 - `/audit-leaks --extract` (creates a new module — that's an architectural decision worth a discrete confirmation).

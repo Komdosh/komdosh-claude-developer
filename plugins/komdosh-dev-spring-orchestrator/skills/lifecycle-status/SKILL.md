@@ -50,6 +50,11 @@ Plugins detected: core <ver> · qa <ver> · events <ver> · platform <ver> · ex
 | 14 | QA artifacts fresh    | PENDING | docs/qa/manual-validation-plan.md older than OrderController |
 | 15 | Service readiness     | UNKNOWN | last /service-health run: never on this branch |
 | 16 | PR description ready  | PENDING | no PR open; /pr-summary not run |
+| 17 | Release readiness     | N/A     | komdosh-dev-spring-release not installed |
+| 18 | Changelog up to date  | N/A     | komdosh-dev-spring-release not installed |
+| 19 | Rollback playbook     | N/A     | komdosh-dev-spring-release not installed |
+| 20 | ABI delta reviewed    | N/A     | service track |
+| 21 | Publish config valid  | N/A     | service track |
 
 ### Summary
 
@@ -81,7 +86,8 @@ plugin_dirs=(
 for d in "${plugin_dirs[@]}"; do
   [ -d "$d" ] || continue
   for p in komdosh-dev-spring-core komdosh-dev-spring-events komdosh-dev-spring-qa \
-           komdosh-dev-spring-platform komdosh-dev-spring-extras komdosh-dev-spring-orchestrator; do
+           komdosh-dev-spring-platform komdosh-dev-spring-extras komdosh-dev-spring-orchestrator \
+           komdosh-dev-spring-revealer komdosh-dev-spring-doc-revealer komdosh-dev-spring-release; do
     found=$(find "$d" -maxdepth 4 -type d -name "$p" 2>/dev/null | head -1)
     [ -n "$found" ] && version=$(jq -r '.version // "?"' "$found/.claude-plugin/plugin.json" 2>/dev/null) \
       && echo "$p $version $found"
@@ -91,13 +97,16 @@ done | sort -u
 
 If a plugin is absent, mark its gates **N/A**:
 
-| Gate | Required plugin |
+| Gate | Required plugin / track |
 |---|---|
 | QA artifacts fresh (#14) | komdosh-dev-spring-qa |
 | Module-boundary scan (#8), Coroutine-safety scan (#9), Liquibase immutability (#10), jOOQ freshness (#11) | komdosh-dev-spring-core (always installed in practice) |
 | Service readiness (#15) | komdosh-dev-spring-core |
 | Event-consumer-specific gates (none in v1) | komdosh-dev-spring-events |
 | Platform extraction gates (none in v1) | komdosh-dev-spring-platform |
+| Release readiness (#17), Changelog (#18) | komdosh-dev-spring-release (both tracks) |
+| Rollback playbook (#19) | komdosh-dev-spring-release AND track == service |
+| ABI delta reviewed (#20), Publish config valid (#21) | komdosh-dev-spring-release AND track == library |
 
 - [ ] **Step 2: Identify the branch and merge base**
 
@@ -211,6 +220,59 @@ Apply the rules below. For each gate emit a row of the table.
 - MET if `gh pr view --json body -q .body` (when authenticated) returns non-empty.
 - PENDING otherwise.
 - N/A if `gh` CLI is not installed or no remote PR exists yet.
+
+**Gates 17–21 — Release engineering.**
+
+These gates apply only when `komdosh-dev-spring-release` is installed. When the plugin is absent, all five report `N/A`.
+
+For gates 19–21, the gate is also conditional on **track**: detect the project's track (service vs library) once and skip the wrong-track gates:
+
+```bash
+# track detection (mirrors release-coordinator Step 2)
+kind=""
+[ -f service.yaml ] && kind=$(grep -E '^kind:\s*' service.yaml | awk '{print $2}' | tr -d '"' | head -1)
+[ -f service.yml ] && kind=${kind:-$(grep -E '^kind:\s*' service.yml | awk '{print $2}' | tr -d '"' | head -1)}
+if [ -z "$kind" ]; then
+  has_publish=$(grep -lE 'maven-publish' build.gradle.kts 2>/dev/null | head -1)
+  has_app=$(find . -name 'Application.kt' -not -path '*/build/*' -not -path '*/test/*' \
+             -exec grep -lE 'runApplication<' {} + 2>/dev/null | head -1)
+  has_dockerfile=$(find . -maxdepth 3 -name 'Dockerfile' | head -1)
+  has_boot=$(grep -lE 'org\.springframework\.boot' build.gradle.kts 2>/dev/null | head -1)
+  if [ -n "$has_publish" ] && [ -z "$has_boot" ] && [ -z "$has_app" ]; then kind="library";
+  elif [ -n "$has_boot" ] && [ -n "$has_app" ] && [ -n "$has_dockerfile" ]; then kind="service";
+  fi
+fi
+```
+
+If `kind` cannot be determined, all five gates report `UNKNOWN` (not `PENDING`) and recommend setting `kind:` in `service.yaml`.
+
+**Gate 17 — Release readiness.**
+- N/A if release plugin not installed.
+- Run `verify-release-readiness-service` (track=service) or `verify-release-readiness-library` (track=library) skill.
+- MET if composite is PASS; PENDING if composite is FAIL.
+- The skill itself reports `N/A` for sub-gates that don't apply (e.g. QA artifacts on a project without the qa plugin) — those don't block this gate.
+
+**Gate 18 — Changelog up to date.**
+- N/A if release plugin not installed.
+- MET if `CHANGELOG.md` exists AND its most-recent non-Unreleased section's date is YYYY-MM-DD format AND its version matches the project's current version.
+- PENDING otherwise.
+
+**Gate 19 — Rollback playbook present.**
+- N/A if release plugin not installed OR `kind == library`.
+- MET if `docs/release/playbooks/v<current-version>.md` exists AND there are no NEW migrations in `last_tag..HEAD` that aren't documented in the playbook.
+- N/A if no NEW migrations exist in the release window.
+- PENDING otherwise.
+
+**Gate 20 — ABI delta reviewed.**
+- N/A if release plugin not installed OR `kind == service`.
+- MET if `docs/release/abi-v<current-version>.md` exists AND its mtime ≥ HEAD commit time AND the report's recommended-bump matches the project's current version bump (no breaking deltas going into a non-major release).
+- PENDING otherwise.
+
+**Gate 21 — Publish config valid.**
+- N/A if release plugin not installed OR `kind == service`.
+- Run `check-publish-config` skill.
+- MET if BLOCKERS == 0 (WARN-only is OK).
+- PENDING if BLOCKERS > 0.
 
 - [ ] **Step 5: Compose the table + JSON summary**
 
