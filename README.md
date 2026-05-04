@@ -6,7 +6,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Claude Code Marketplace](https://img.shields.io/badge/Claude%20Code-Marketplace-blueviolet)](https://docs.claude.com/en/docs/claude-code)
-[![5 plugins](https://img.shields.io/badge/plugins-5-2ea44f)](.claude-plugin/marketplace.json)
+[![6 plugins](https://img.shields.io/badge/plugins-6-2ea44f)](.claude-plugin/marketplace.json)
 [![Stack: Kotlin · Spring WebFlux · coroutines](https://img.shields.io/badge/stack-Kotlin%20%C2%B7%20Spring%20WebFlux%20%C2%B7%20coroutines-orange)](plugins/komdosh-dev-spring-core/rules/spring-webflux.md)
 
 [**Install**](#install-in-30-seconds) · [**Plugins**](#what-ships-in-this-marketplace) · [**Anatomy of a task**](#anatomy-of-a-development-task) · [**Conventions**](#conventions-enforced-by-core) · [**Authoring**](#authoring-plugins-in-this-marketplace)
@@ -15,9 +15,9 @@
 
 ---
 
-> **One marketplace, five focused plugins.** Install only what you need.
+> **One marketplace, six focused plugins.** Install only what you need.
 
-`komdosh-claude-developer` is a **single-source Claude Code marketplace**. It ships five composable plugins that share an opinionated stack (Kotlin + Spring WebFlux + coroutines, hexagonal architecture, RFC 9457 errors, jOOQ + Liquibase, Micrometer + OpenTelemetry). Pick the foundation plus whichever specialty workflows you actually use.
+`komdosh-claude-developer` is a **single-source Claude Code marketplace**. It ships six composable plugins that share an opinionated stack (Kotlin + Spring WebFlux + coroutines, hexagonal architecture, RFC 9457 errors, jOOQ + Liquibase, Micrometer + OpenTelemetry). Pick the foundation plus whichever specialty workflows you actually use — and add the orchestrator if you want top-down lifecycle guidance.
 
 ## What ships in this marketplace
 
@@ -28,8 +28,9 @@
 | **[komdosh-dev-spring-qa](plugins/komdosh-dev-spring-qa/)** | `/qa-plan` + `/qa-postman` + `/qa-console` — markdown checklist, Newman-runnable Postman collection, single-file HTML QA console. Plus a hook that warns when artifacts go stale. | You ship to a team that does manual QA, or you want a smoke suite a non-CLI teammate can run. |
 | **[komdosh-dev-spring-platform](plugins/komdosh-dev-spring-platform/)** | `/audit-leaks` + `platform-developer` agent + `rules/platform-module.md` — find vendor-coupling leaks (Micrometer, jOOQ, Reactor, Jackson, Kafka, R2DBC) in `application/`/`domain/` and stage abstractions into a `common/` module. | You're modernising or about to swap a vendor (metrics backend, broker, JSON library). |
 | **[komdosh-dev-spring-extras](plugins/komdosh-dev-spring-extras/)** | `/upgrade` (one-library-at-a-time bumps with changelog awareness), `/detect-flakes` (re-run + classify + route), `/load-test-new` (Gatling scaffolder). | When the specific need arises. |
+| **[komdosh-dev-spring-orchestrator](plugins/komdosh-dev-spring-orchestrator/)** | `/lifecycle` (status / next / orchestrate / audit) backed by the `lifecycle-supervisor` agent and the `lifecycle-status` skill. Computes a 16-gate pipeline (requirement → spec → ADR → plan → code → tests → migrations → preflight scans → verification → review → QA → readiness → PR), recommends the next action, and (with confirmation) chains the work toward "ready to ship". Detects which marketplace plugins are installed and skips inapplicable gates as N/A. | You want top-down lifecycle guidance for AI agents — orientation at the start of a session, gate enforcement before you ship. |
 
-Total: **23 agents · 17 commands · 9 mandatory skills · 12 rule documents · 2 post-edit hooks** distributed across five plugins. Each is independently installable.
+Total: **24 agents · 18 commands · 10 mandatory skills · 12 rule documents · 2 post-edit hooks** distributed across six plugins. Each is independently installable.
 
 ## Install in 30 seconds
 
@@ -42,6 +43,7 @@ Inside Claude Code:
 /plugin install komdosh-dev-spring-events@komdosh-claude-developer      # if you consume Kafka/SQS/RabbitMQ
 /plugin install komdosh-dev-spring-platform@komdosh-claude-developer    # if you're auditing vendor leaks
 /plugin install komdosh-dev-spring-extras@komdosh-claude-developer      # for /upgrade /detect-flakes /load-test-new
+/plugin install komdosh-dev-spring-orchestrator@komdosh-claude-developer # for /lifecycle and top-down workflow guidance
 /plugin
 ```
 
