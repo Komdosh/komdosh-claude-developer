@@ -1,4 +1,4 @@
-# CLAUDE.md — komdosh-dev-spring-revealer
+# CLAUDE.md — komdosh-dev-kotlin-revealer
 
 This plugin reveals accumulated project knowledge — what you've already decided, written, and committed — across every available source. Targeted at advanced AI users who wire up RAG / MCP knowledge bases on top of the local docs.
 

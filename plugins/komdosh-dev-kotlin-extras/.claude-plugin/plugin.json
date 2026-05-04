@@ -1,5 +1,5 @@
 {
-  "name": "komdosh-dev-spring-extras",
+  "name": "komdosh-dev-kotlin-extras",
   "displayName": "Kotlin/Spring Extras",
   "version": "0.2.0",
   "description": "Niche tooling on top of komdosh-dev-spring-core — install only if you need any of these. Ships /upgrade (dependency-upgrader: bumps one library at a time in libs.versions.toml with changelog awareness, capped at 5 compile-fix iterations); /detect-flakes (flaky-test-detector: re-runs tests N times, classifies, appends to docs/flakes.md, routes to specialist); /load-test-new (load-test-scaffolder: scaffolds Gatling simulations). Requires komdosh-dev-spring-core.",

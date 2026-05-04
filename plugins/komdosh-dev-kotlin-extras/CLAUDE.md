@@ -1,4 +1,4 @@
-# CLAUDE.md — komdosh-dev-spring-extras
+# CLAUDE.md — komdosh-dev-kotlin-extras
 
 Niche tooling on top of `komdosh-dev-spring-core`. Install only if you actually need one of these.
 

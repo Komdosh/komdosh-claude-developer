@@ -1,4 +1,4 @@
-# CLAUDE.md — komdosh-dev-spring-doc-revealer
+# CLAUDE.md — komdosh-dev-kotlin-doc-revealer
 
 This plugin reveals **source documentation** — KDoc/Javadoc on classes, project `/docs/` architecture material, framework/library reference docs, and open-source READMEs/wikis. It is the *smart* alternative to "let me just decompile the JAR and read the bytecode": the agent targets the cheapest, most accurate source first, caches what it finds, and only falls back to JAR inspection when everything else fails.
 
@@ -93,9 +93,9 @@ Source: <which step on the ladder served the answer>  (cache: hit | miss → wri
 
 ## Why a separate plugin
 
-`komdosh-dev-spring-revealer` answers **"what have we already decided?"** — its sources are decision artefacts (ADRs, specs, commit archaeology, RAG over the project's own writing).
+`komdosh-dev-kotlin-revealer` answers **"what have we already decided?"** — its sources are decision artefacts (ADRs, specs, commit archaeology, RAG over the project's own writing).
 
-`komdosh-dev-spring-doc-revealer` answers **"what does this *mean* / how do I use it?"** — its sources are reference docs (KDoc, Javadoc, framework manuals, library APIs). Different ladders, different caches, different output shape (the doc one has signatures and anchors; the knowledge one has citations and gap analysis pointing at `/adr-new`).
+`komdosh-dev-kotlin-doc-revealer` answers **"what does this *mean* / how do I use it?"** — its sources are reference docs (KDoc, Javadoc, framework manuals, library APIs). Different ladders, different caches, different output shape (the doc one has signatures and anchors; the knowledge one has citations and gap analysis pointing at `/adr-new`).
 
 Splitting them keeps each ladder focused, lets a developer install only the one they need, and avoids tempting the agent to mix "this is the API of `Mono.transform`" with "this is why we picked Reactor over RxJava".
 

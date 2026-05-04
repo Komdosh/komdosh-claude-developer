@@ -13,7 +13,7 @@ Companion plugins ship in the same marketplace and add scoped capabilities on to
 | `komdosh-dev-spring-events` | Kafka/SQS/RabbitMQ consumer authoring + `rules/event-consumers.md` |
 | `komdosh-dev-spring-qa` | `/qa-plan` `/qa-postman` `/qa-console`, the `discover-api-surface` skill, the QA-staleness hook |
 | `komdosh-dev-spring-platform` | `/audit-leaks` + `platform-developer` agent + `rules/platform-module.md` |
-| `komdosh-dev-spring-extras` | `dependency-upgrader` (`/upgrade`), `flaky-test-detector` (`/detect-flakes`), `load-test-scaffolder` (`/load-test-new`) |
+| `komdosh-dev-kotlin-extras` | `dependency-upgrader` (`/upgrade`), `flaky-test-detector` (`/detect-flakes`), `load-test-scaffolder` (`/load-test-new`) |
 
 This is a *behavioural* plugin — there is no application source code here, no Gradle build, no test suite. "Build/lint/test" means editing the plugin's Markdown/JSON content, not compiling code.
 

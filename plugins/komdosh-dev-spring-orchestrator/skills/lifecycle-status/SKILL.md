@@ -27,7 +27,9 @@ Plus a structured JSON summary at the end (the supervisor parses this; humans sk
 Base: <merge-base SHA> (origin/main)
 Files changed:    <N> Kotlin · <K> SQL · <M> docs
 Lines changed:    +<added> -<removed>
-Plugins detected: core <ver> · qa <ver> · events <ver> · platform <ver> · extras <ver> · orchestrator <ver>
+Plugins detected: spring-core <ver> · spring-qa <ver> · spring-events <ver> · spring-platform <ver> ·
+                  spring-orchestrator <ver> · spring-release <ver> · kotlin-extras <ver> ·
+                  kotlin-revealer <ver> · kotlin-doc-revealer <ver>
                   (any of the above absent → its gates are skipped)
 
 ### Gates
@@ -86,8 +88,8 @@ plugin_dirs=(
 for d in "${plugin_dirs[@]}"; do
   [ -d "$d" ] || continue
   for p in komdosh-dev-spring-core komdosh-dev-spring-events komdosh-dev-spring-qa \
-           komdosh-dev-spring-platform komdosh-dev-spring-extras komdosh-dev-spring-orchestrator \
-           komdosh-dev-spring-revealer komdosh-dev-spring-doc-revealer komdosh-dev-spring-release; do
+           komdosh-dev-spring-platform komdosh-dev-kotlin-extras komdosh-dev-spring-orchestrator \
+           komdosh-dev-kotlin-revealer komdosh-dev-kotlin-doc-revealer komdosh-dev-spring-release; do
     found=$(find "$d" -maxdepth 4 -type d -name "$p" 2>/dev/null | head -1)
     [ -n "$found" ] && version=$(jq -r '.version // "?"' "$found/.claude-plugin/plugin.json" 2>/dev/null) \
       && echo "$p $version $found"

@@ -58,7 +58,7 @@ A gate that does not apply to the current change (e.g., no schema change → mig
 - **Required**: `komdosh-dev-spring-core` — for the foundational skills (`read-service-context`, `module-boundary-check`, `coroutine-safety-scan`, `liquibase-changeset-immutability`, `jooq-generation-freshness`, `check-adr-required`, `run-verification`) and the agents/commands that satisfy gates 2–13 + 15–16.
 - **Optional**: `komdosh-dev-spring-qa` — enables gate 14. Without it, gate 14 is `N/A`.
 - **Optional**: `komdosh-dev-spring-release` — enables gates 17–21. Without it, those gates are `N/A`. With it, gates 19 vs 20+21 are also conditional on the project's track (service vs library).
-- **Optional**: `komdosh-dev-spring-events`, `komdosh-dev-spring-platform`, `komdosh-dev-spring-extras` — the supervisor will recommend their commands when relevant (e.g., `/upgrade` after a CVE flagged by readiness audit), and skip recommendations for absent ones.
+- **Optional**: `komdosh-dev-spring-events`, `komdosh-dev-spring-platform`, `komdosh-dev-kotlin-extras` — the supervisor will recommend their commands when relevant (e.g., `/upgrade` after a CVE flagged by readiness audit), and skip recommendations for absent ones.
 
 The supervisor never assumes a non-core plugin is present — it detects them via the `lifecycle-status` skill's plugin-installation scan.
 

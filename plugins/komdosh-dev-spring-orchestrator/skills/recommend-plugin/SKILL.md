@@ -86,7 +86,7 @@ done
 # Fallback: deep-find under ~/.claude/plugins (any marketplace.json that lists this owner's plugins).
 if [ -z "$mp_json" ]; then
   mp_json=$(find "$HOME/.claude/plugins" -maxdepth 6 -type f -name marketplace.json 2>/dev/null \
-    | xargs -I{} sh -c 'jq -e ".plugins[]? | select(.name | startswith(\"komdosh-dev-spring-\"))" "{}" >/dev/null 2>&1 && echo "{}"' \
+    | xargs -I{} sh -c 'jq -e ".plugins[]? | select(.name | test(\"^komdosh-dev-(spring|kotlin)-\"))" "{}" >/dev/null 2>&1 && echo "{}"' \
     | head -1)
 fi
 echo "marketplace.json: ${mp_json:-NOT FOUND}"
@@ -108,13 +108,14 @@ done < /dev/null
 
 for d in "${plugin_dirs[@]}"; do
   [ -d "$d" ] || continue
+  # Match both namespace prefixes: spring-* (Spring-specific plugins) and kotlin-* (generic Kotlin/JVM plugins).
   while IFS= read -r found; do
     name=$(jq -r '.name // empty' "$found/.claude-plugin/plugin.json" 2>/dev/null)
     [ -n "$name" ] || continue
-    [[ "$name" == komdosh-dev-spring-* ]] || continue
+    [[ "$name" == komdosh-dev-spring-* || "$name" == komdosh-dev-kotlin-* ]] || continue
     installed[$name]=1
     plugin_path[$name]="$found"
-  done < <(find "$d" -maxdepth 4 -type d -name 'komdosh-dev-spring-*' 2>/dev/null)
+  done < <(find "$d" -maxdepth 4 -type d \( -name 'komdosh-dev-spring-*' -o -name 'komdosh-dev-kotlin-*' \) 2>/dev/null)
 done
 
 # For each installed plugin, emit name + description + keywords as a JSON line.
@@ -128,7 +129,7 @@ For each plugin in `marketplace.json` that is **not** in `installed`, also emit 
 
 If neither `marketplace.json` nor any installed plugin is found (typical in a sandbox), emit one line:
 ```text
-Catalog unavailable — no marketplace.json located and no komdosh-dev-spring-* plugins installed under ~/.claude/plugins.
+Catalog unavailable — no marketplace.json located and no komdosh-dev-{spring,kotlin}-* plugins installed under ~/.claude/plugins.
 ```
 …and stop. Don't fabricate recommendations from training-data memory.
 

@@ -10,7 +10,7 @@ You answer "what does this *mean* / how do I use it?" — by walking a fixed lad
 
 ## What this agent is NOT for
 
-- "What have we decided about X?" — that's `knowledge-revealer` in `komdosh-dev-spring-revealer`. Hand off.
+- "What have we decided about X?" — that's `knowledge-revealer` in `komdosh-dev-kotlin-revealer`. Hand off.
 - "Write me a new class / port" — that's `backend-implementer` in core.
 - "Generate a doc / ADR" — that's `adr-writer` / `requirements-analyst` in core.
 
@@ -143,7 +143,7 @@ Print the full output shape verbatim. Keep the Summary under 6 sentences at `dep
 
 | Need | Agent / command |
 |---|---|
-| "Why did we pick this library?" | `/reveal <library> selection rationale` (knowledge-revealer in `komdosh-dev-spring-revealer`) |
+| "Why did we pick this library?" | `/reveal <library> selection rationale` (knowledge-revealer in `komdosh-dev-kotlin-revealer`) |
 | "Add a KDoc to this class" | `backend-implementer` (in core), with the doc text you wrote here as the seed |
 | "Capture this finding as an ADR" | `/adr-new` (in core) |
 | "Re-run after the version bump" | `/doc-reveal <query> --refresh` |

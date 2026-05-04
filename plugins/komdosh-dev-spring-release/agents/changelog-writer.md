@@ -72,8 +72,8 @@ If a commit subject is terse (`fix: handle edge case`, `refactor: cleanup`) AND 
 
 ```bash
 # probe — check if /reveal command exists
-[ -f "$HOME/.claude/plugins/komdosh-dev-spring-revealer" ] || \
-  find "$HOME/.claude/plugins/cache" -name komdosh-dev-spring-revealer -type d 2>/dev/null | head -1
+[ -f "$HOME/.claude/plugins/komdosh-dev-kotlin-revealer" ] || \
+  find "$HOME/.claude/plugins/cache" -name komdosh-dev-kotlin-revealer -type d 2>/dev/null | head -1
 ```
 
 For each terse entry, invoke `reveal-knowledge` with the commit subject + body to fetch any related ADR, spec, or note. If a one-line rationale comes back, append it as a sub-bullet:
