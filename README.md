@@ -18,8 +18,6 @@
 > **23 specialised agents · 17 slash commands · 9 mandatory skills · 12 rule documents · 2 post-edit hooks.**
 > One install. Zero configuration drift across services.
 
-**Recent additions:** five fast preflight skills ([`pre-edit-impact-check`](skills/pre-edit-impact-check/SKILL.md), [`coroutine-safety-scan`](skills/coroutine-safety-scan/SKILL.md), [`module-boundary-check`](skills/module-boundary-check/SKILL.md), [`liquibase-changeset-immutability`](skills/liquibase-changeset-immutability/SKILL.md), [`jooq-generation-freshness`](skills/jooq-generation-freshness/SKILL.md)) that catch routine errors in seconds before the slower verification runs · two post-edit hooks that auto-warn on stale QA artifacts and unregistered Liquibase changesets · [`event-consumer-author`](agents/event-consumer-author.md) for Kafka/SQS/RabbitMQ consumers with mandatory idempotency · [`dependency-upgrader`](agents/dependency-upgrader.md) ([`/upgrade`](commands/upgrade.md)) for one-library-at-a-time bumps with changelog awareness · [`flaky-test-detector`](agents/flaky-test-detector.md) ([`/detect-flakes`](commands/detect-flakes.md)) · [`platform-developer`](agents/platform-developer.md) ([`/audit-leaks`](commands/audit-leaks.md)) which audits `application/` for vendor leaks and stages abstractions into a `common/` module.
-
 ## What it is
 
 A Claude Code plugin that ships an opinionated, end-to-end workflow for **Kotlin + Spring (WebFlux + coroutines)** services. Drop it into any consumer project and Claude immediately knows your hexagonal layout, your error contract (RFC 9457), your migration style (jOOQ + Liquibase), your test conventions (Testcontainers + ArchUnit), and your observability rules (Micrometer + OpenTelemetry, no MDC in coroutine paths).
