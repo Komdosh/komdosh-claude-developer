@@ -108,6 +108,8 @@ Per [`rules/avro-schemas.md`](../rules/avro-schemas.md):
 
 Note: every field has `doc`, optional fields are T-first with `null` default, money uses `decimal` not `double`, IDs use `uuid` logical type, the enum has a `default` symbol for forward-compat.
 
+Apache Avro 1.10+ generates `java.time.Instant` / `LocalDate` for the `timestamp-millis` / `date` logical types out of the box (the legacy Joda types are gone). No special Gradle plugin option is needed — that "set `dateTimeLogicalType=JSR310`" advice you'll see in older blog posts is for Avro <1.10 and is no longer applicable. Just write the schema; the generated class uses `java.time` types automatically.
+
 ## After Authoring
 
 1. Trigger codegen and confirm the class appears:

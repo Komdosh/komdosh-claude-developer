@@ -15,15 +15,20 @@ plugins {
 }
 
 avro {
-    // Generate java.time types (Instant, LocalDate, ...) instead of legacy Joda types.
-    // Without this, fields with timestamp-millis become Joda DateTime — old, blocking, and
-    // incompatible with kotlinx-coroutines context propagation.
-    isCreateSetters.set(false)         // SpecificRecord builders + immutable fields; no setters
-    fieldVisibility.set("PRIVATE")     // generated fields are private; access via getters
-    stringType.set("String")           // not CharSequence — Kotlin interop
-    enableDecimalLogicalType.set(true) // decimal -> BigDecimal, not ByteBuffer
-    dateTimeLogicalType.set("JSR310")  // timestamps -> java.time.Instant
+    // SpecificRecord builders + immutable fields; setters are unnecessary and a footgun on evolved schemas
+    isCreateSetters.set(false)
+    fieldVisibility.set("PRIVATE")           // generated fields are private; access via getters
+    stringType.set("String")                 // not CharSequence — Kotlin interop
+    isEnableDecimalLogicalType.set(true)     // decimal -> BigDecimal, not ByteBuffer (this is the default in 1.4+; set explicitly as defense-in-depth)
     outputCharacterEncoding.set("UTF-8")
+}
+
+// IMPORTANT: davidmc24 dropped automatic Kotlin compile-task wiring in plugin version 1.4.0
+// (it would force a hard dependency on a specific Kotlin version). You MUST add this
+// dependency yourself, or the Kotlin compiler will run before generateAvroJava and fail to
+// resolve the generated classes:
+tasks.named("compileKotlin") {
+    dependsOn("generateAvroJava")
 }
 
 dependencies {
@@ -67,7 +72,17 @@ The audit treats committed generated sources as a BLOCKER.
 
 ## Task ordering
 
-The Avro generator runs as part of `compileJava` (and transitively `compileKotlin`). For multi-module setups where the consumer module references generated DTOs from another module, ensure the source set is exposed:
+The Avro generator runs as part of `compileJava` automatically. For Kotlin source sets, davidmc24 plugin version **1.4.0+ no longer wires Kotlin compilation tasks automatically** — it would force a hard dependency on a specific Kotlin plugin version. You MUST wire it yourself in every module that has both Avro schemas and Kotlin sources:
+
+```kotlin
+tasks.named("compileKotlin") {
+    dependsOn("generateAvroJava")
+}
+```
+
+Without this, `./gradlew compileKotlin` runs before `generateAvroJava` and the Kotlin compiler reports unresolved references to the generated classes — a classic "works in IntelliJ, fails in CI" symptom. The audit treats a missing `dependsOn` as a WARNING when the module has both `.avsc` files and Kotlin sources.
+
+For multi-module setups where another module references the generated DTOs, expose the generated directory in the producing module's source set:
 
 ```kotlin
 sourceSets {
@@ -75,13 +90,9 @@ sourceSets {
         java.srcDirs("build/generated-main-avro-java")
     }
 }
-
-tasks.compileKotlin {
-    dependsOn("generateAvroJava")
-}
 ```
 
-Modern davidmc24 versions wire this automatically — verify `./gradlew compileKotlin` triggers `generateAvroJava` without a manual `dependsOn`. If it doesn't, add the line above.
+This is usually unnecessary (davidmc24 wires the source set itself), but explicit is better than implicit when debugging cross-module classpath issues.
 
 ## Kotlin-from-Java interop
 
@@ -94,8 +105,8 @@ class OrderCreatedHandler {
     suspend fun handle(event: OrderCreatedV1) {
         val orderId: UUID = event.orderId          // non-null in the schema → Kotlin sees UUID
         val promo: String? = event.promoCode       // optional in the schema → Kotlin sees String? (platform type, but the @Nullable on the getter helps)
-        val amount: BigDecimal = event.totalAmount // decimal logical type → BigDecimal (because enableDecimalLogicalType=true)
-        val occurredAt: Instant = event.occurredAt // timestamp-millis + JSR310 → Instant
+        val amount: BigDecimal = event.totalAmount // decimal logical type → BigDecimal (default in davidmc24 1.4+)
+        val occurredAt: Instant = event.occurredAt // timestamp-millis → java.time.Instant (default in Apache Avro 1.10+)
     }
 }
 ```
@@ -169,12 +180,12 @@ Mentioned for completeness. Mostly a Scala-ecosystem tool; in Kotlin/Spring proj
 The [`/avro-audit`](../commands/avro-audit.md) command runs these checks:
 
 - [ ] Avro plugin pinned to an explicit version (no `+`, no `latest.release`).
-- [ ] `dateTimeLogicalType = "JSR310"` set (BLOCKER if Joda types are emitted).
-- [ ] `enableDecimalLogicalType = true` set (WARNING — decimal as `ByteBuffer` is a footgun).
-- [ ] `stringType = "String"` (not `CharSequence`) for Kotlin interop.
+- [ ] `isEnableDecimalLogicalType = true` (default in 1.4+; check it isn't explicitly disabled — `decimal` as `ByteBuffer` is a footgun).
+- [ ] `stringType = "String"` (default; flag if set to `CharSequence` for Kotlin interop).
 - [ ] `build/generated-main-avro-java/` is gitignored and NOT in `git ls-files` output.
 - [ ] Generated DTOs are referenced only from `adapters/*/dto/`, never from `domain/` or `application/`.
-- [ ] `compileKotlin` (or `compileJava`) triggers `generateAvroJava` — verified by running it on a clean build dir.
+- [ ] If the module has both `.avsc` files and Kotlin sources, `compileKotlin` declares `dependsOn("generateAvroJava")` — verified by running `./gradlew compileKotlin` on a clean build dir. (BLOCKER from 1.4.0 onward; the plugin no longer auto-wires Kotlin.)
+- [ ] Avro runtime version (`org.apache.avro:avro`) matches what the generator was built against — currently 1.11.x for davidmc24 1.9.x. A skew between the runtime jar and the generator's emitted bytecode causes silent decode bugs.
 
 ## Precedent
 

@@ -44,12 +44,12 @@ For every `.avsc` (and `.avdl`) under any `src/main/avro/`:
 | Rule | Severity if violated |
 |---|---|
 | Avro plugin pinned to an explicit version (no floating `+` or `latest.release`) in `gradle/libs.versions.toml` or `build.gradle.kts` | BLOCKER |
-| `dateTimeLogicalType` set to `"JSR310"` for the davidmc24 plugin (otherwise the plugin emits Joda types — old, blocking, and don't play with `kotlinx.coroutines`) | BLOCKER |
-| `enableDecimalLogicalType` set to `true` (otherwise `decimal` fields generate as `ByteBuffer` instead of `BigDecimal`) | WARNING |
-| `stringType` set to `"String"` (not `"CharSequence"`) for Kotlin interop | INFO |
+| `isEnableDecimalLogicalType` is NOT explicitly set to `false` (default in 1.4+ is `true`; flag only if explicitly disabled) | WARNING |
+| `stringType` is NOT set to `"CharSequence"` (default `"String"` is right for Kotlin interop) | INFO |
+| Avro runtime version (`org.apache.avro:avro`) matches the davidmc24 plugin's tested-against version (1.11.x for davidmc24 1.9.x) | WARNING if a 2-major skew (e.g. plugin 1.9 against avro 1.13) — silent decode bugs |
 | `build/generated-main-avro-java/` (or equivalent) is in `.gitignore` and NOT in `git ls-files` output | BLOCKER |
 | Generated DTOs are referenced from `adapters/*/dto/` only — never imported in `domain/` or `application/` | BLOCKER |
-| The Avro generator runs as part of `compileKotlin` (Gradle task ordering) — generated sources are visible to Kotlin compilation | WARNING (else codegen drift between IDE and CI) |
+| If the module has BOTH `.avsc` files AND Kotlin sources, `compileKotlin` declares `dependsOn("generateAvroJava")` — davidmc24 1.4.0+ no longer auto-wires Kotlin | BLOCKER (else "works in IntelliJ, fails in CI") |
 
 - [ ] **Step 5: Audit registry config**
 

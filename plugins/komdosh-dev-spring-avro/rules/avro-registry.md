@@ -93,11 +93,21 @@ spring:
 
 ## Spring Boot config — Apicurio
 
+Apicurio Registry has TWO active major versions and the URL path differs:
+
+| Version | URL path | Notes |
+|---|---|---|
+| Apicurio Registry v2 | `http://<host>:8080/apis/registry/v2` | Stable; widely deployed. |
+| Apicurio Registry v3 | `http://<host>:8080/apis/registry/v3` | Current; the Apicurio examples on GitHub now target v3. URL path changed from `/v2` → `/v3`. |
+
+Verify which version your deployment runs (a wrong URL path returns 404 from the registry, NOT a clear error from the serdes layer — silent failures are common). Both versions expose Avro serdes under the `io.apicurio.registry.serde.avro` package; the maven coordinate has shifted between major versions, so check the version your project depends on rather than hardcoding it.
+
 ```yaml
 spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
     properties:
+      # v3 path: /apis/registry/v3 — verify against your deployed Apicurio version
       apicurio.registry.url: ${APICURIO_REGISTRY_URL}
       apicurio.registry.auth.username: ${APICURIO_REGISTRY_USER}
       apicurio.registry.auth.password: ${APICURIO_REGISTRY_PASSWORD}

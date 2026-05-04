@@ -21,7 +21,7 @@ Read [`rules/event-consumers.md`](../rules/event-consumers.md) before writing an
 3. Identify whether the schema lives in a registry:
    - Confluent Schema Registry: look for `io.confluent.kafka.schemaregistry`
    - Apicurio: look for `io.apicurio:apicurio-registry-serdes-avro-serde`
-   - If a registry is configured, the DTO is generated — do NOT hand-write the class.
+   - If a registry is configured, the DTO is generated — do NOT hand-write the class. If the schema does not yet exist OR the codegen pipeline is not wired, route to `/avro-new-event` (from `komdosh-dev-spring-avro`) and resume this agent once the generated DTO is on the classpath.
 4. Find existing consumers in `adapters/inbound/<consumer>/` and follow their layout. If none exist, you are creating the first — pick a focused subdirectory (`adapters/inbound/orders/`).
 
 ## File Layout
