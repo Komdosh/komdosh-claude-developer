@@ -15,8 +15,10 @@
 
 ---
 
-> **19 specialised agents · 14 slash commands · 4 mandatory skills · 10 rule documents.**
+> **23 specialised agents · 17 slash commands · 9 mandatory skills · 12 rule documents · 2 post-edit hooks.**
 > One install. Zero configuration drift across services.
+
+**Recent additions:** five fast preflight skills ([`pre-edit-impact-check`](skills/pre-edit-impact-check/SKILL.md), [`coroutine-safety-scan`](skills/coroutine-safety-scan/SKILL.md), [`module-boundary-check`](skills/module-boundary-check/SKILL.md), [`liquibase-changeset-immutability`](skills/liquibase-changeset-immutability/SKILL.md), [`jooq-generation-freshness`](skills/jooq-generation-freshness/SKILL.md)) that catch routine errors in seconds before the slower verification runs · two post-edit hooks that auto-warn on stale QA artifacts and unregistered Liquibase changesets · [`event-consumer-author`](agents/event-consumer-author.md) for Kafka/SQS/RabbitMQ consumers with mandatory idempotency · [`dependency-upgrader`](agents/dependency-upgrader.md) ([`/upgrade`](commands/upgrade.md)) for one-library-at-a-time bumps with changelog awareness · [`flaky-test-detector`](agents/flaky-test-detector.md) ([`/detect-flakes`](commands/detect-flakes.md)) · [`platform-developer`](agents/platform-developer.md) ([`/audit-leaks`](commands/audit-leaks.md)) which audits `application/` for vendor leaks and stages abstractions into a `common/` module.
 
 ## What it is
 
@@ -41,10 +43,11 @@ This repo doubles as a **self-hosted single-plugin Claude Code marketplace** —
 
 | Layer | Count | Examples |
 |---|---|---|
-| **Agents** | 19 | `backend-implementer`, `migration-writer`, `change-reviewer`, `service-readiness-auditor`, `integration-debugger`, `qa-plan-writer`, `qa-postman-writer`, `qa-console-writer` |
-| **Slash commands** | 14 | `/add-endpoint`, `/add-migration`, `/adr-new`, `/review`, `/verify-service`, `/test-fix`, `/pr-summary`, `/qa-plan`, `/qa-postman`, `/qa-console` |
-| **Skills (mandatory checklists)** | 4 | `read-service-context`, `run-verification`, `check-adr-required`, `discover-api-surface` |
-| **Rules** | 10 | `hexagonal.md`, `kotlin-coroutines.md`, `spring-webflux.md`, `persistence.md`, `observability.md`, `error-handling.md`, `domain-purity.md`, `api-conventions.md`, `code-style.md`, `testing.md` |
+| **Agents** | 23 | `backend-implementer`, `migration-writer`, `change-reviewer`, `service-readiness-auditor`, `integration-debugger`, `qa-{plan,postman,console}-writer`, `event-consumer-author`, `dependency-upgrader`, `flaky-test-detector`, `platform-developer` |
+| **Slash commands** | 17 | `/add-endpoint`, `/add-migration`, `/adr-new`, `/review`, `/verify-service`, `/test-fix`, `/pr-summary`, `/qa-plan`, `/qa-postman`, `/qa-console`, `/upgrade`, `/detect-flakes`, `/audit-leaks` |
+| **Skills (mandatory checklists)** | 9 | `read-service-context`, `run-verification`, `check-adr-required`, `discover-api-surface`, `pre-edit-impact-check`, `coroutine-safety-scan`, `module-boundary-check`, `liquibase-changeset-immutability`, `jooq-generation-freshness` |
+| **Rules** | 12 | `hexagonal.md`, `kotlin-coroutines.md`, `spring-webflux.md`, `persistence.md`, `observability.md`, `error-handling.md`, `domain-purity.md`, `api-conventions.md`, `code-style.md`, `testing.md`, `event-consumers.md`, `platform-module.md` |
+| **Hooks (auto-installed)** | 2 | `qa-staleness-warn` (after editing `*Controller.kt`), `migration-register-reminder` (after writing `V*.sql`) |
 
 Agents are **narrowly scoped and delegate**:
 - `backend-implementer` modifies services but never bootstraps them (→ `service-bootstrapper`), never writes tests (→ `test-writer`), never writes migrations (→ `migration-writer`), never touches Gradle (→ `build-expert`).
@@ -181,6 +184,9 @@ Claude Code asks where to install. Pick deliberately:
 | Generate a manual QA validation plan | [`/qa-plan`](commands/qa-plan.md) |
 | Generate a Postman collection with assertions | [`/qa-postman`](commands/qa-postman.md) |
 | Generate a self-contained HTML QA console | [`/qa-console`](commands/qa-console.md) |
+| Bump one library safely with changelog awareness | [`/upgrade`](commands/upgrade.md) |
+| Detect flaky tests by re-running N times | [`/detect-flakes`](commands/detect-flakes.md) |
+| Audit `application/` for vendor leaks (Micrometer, jOOQ, Reactor) and stage abstractions into `common/` | [`/audit-leaks`](commands/audit-leaks.md) |
 
 ## Conventions enforced
 
@@ -196,6 +202,8 @@ The 10 [`rules/*.md`](rules/) files are loaded into every Claude session via [`C
 | [error-handling.md](rules/error-handling.md) | `ProblemDetail` everywhere; never leak stack traces/SQL/internal IDs; sealed `DomainException` hierarchy with no Spring imports | Error safety |
 | [persistence.md](rules/persistence.md) | jOOQ DSL only; idempotent Liquibase formatted SQL; `TransactionalOperator.executeAndAwait` for coroutines; outbox pattern for events | Persistence safety |
 | [observability.md](rules/observability.md) | Micrometer naming `<org>.<service>.<subject>.<verb>`, low-cardinality tags, OTel vendor-neutral APIs, **no MDC in WebFlux/coroutine paths** | Observability |
+| [event-consumers.md](rules/event-consumers.md) | Manual offset/ack per broker, mandatory `processed_events` idempotency table, transient-vs-poison error policy, schema-registry DTOs, the one permitted `runBlocking` at the listener-thread boundary | Event consumers |
+| [platform-module.md](rules/platform-module.md) | `application/` and `domain/` depend on **abstractions** in a leaf `common/` module — never on Micrometer/jOOQ/Reactor/Jackson directly. Adapter implementations in `adapters/outbound/` | Vendor decoupling |
 | [testing.md](rules/testing.md) | `runTest` (never `runBlocking`); fakes preferred over mocks (MockK only for unmockable third-party finals; never Mockito); `Clock.fixed`; Testcontainers for outbound integration tests | Test discipline |
 | [code-style.md](rules/code-style.md) | `data class` + `val`, `sealed interface` for results, no `!!`, no magic numbers, ~300-line file split signal | Style |
 
@@ -241,10 +249,6 @@ ln -s "$PWD" ~/.claude/plugins/komdosh-claude-developer
 # inside Claude Code:
 /reload-plugins
 ```
-
-## Reference example
-
-[`.example-claude/`](.example-claude/) is a snapshot of one consumer project's `.claude/` directory — it shows what richer customisation on top of this plugin looks like (additional architect agent, project-specific skills, agent memories). It is documentation only; nothing in it ships with the plugin. See [`.example-claude/README.md`](.example-claude/README.md).
 
 ## License
 

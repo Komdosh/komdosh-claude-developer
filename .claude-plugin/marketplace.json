@@ -7,7 +7,7 @@
     {
       "name": "komdosh-claude-developer",
       "source": "./",
-      "description": "Backend dev plugin for Kotlin + Spring WebFlux/coroutines services. 16 specialised agents, 11 slash commands, 3 mandatory skills, 10 rule documents enforcing hexagonal architecture, coroutine safety, and RFC 9457 errors."
+      "description": "Backend dev plugin for Kotlin + Spring WebFlux/coroutines services. 23 specialised agents, 17 slash commands, 9 mandatory skills, 12 rule documents, 2 post-edit hooks — enforcing hexagonal architecture, coroutine safety, RFC 9457 errors, vendor-decoupled platform abstractions, and end-to-end QA artifact generation."
     }
   ]
 }
