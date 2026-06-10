@@ -7,13 +7,10 @@
     "email": "ave.tabakov@gmail.com",
     "url": "https://github.com/komdosh"
   },
-  "metadata": {
-    "pluginRoot": "./plugins"
-  },
   "plugins": [
     {
       "name": "komdosh-dev-spring-core",
-      "source": "komdosh-dev-spring-core",
+      "source": "./plugins/komdosh-dev-spring-core",
       "category": "foundation",
       "tags": [
         "kotlin",
@@ -26,7 +23,7 @@
     },
     {
       "name": "komdosh-dev-spring-events",
-      "source": "komdosh-dev-spring-events",
+      "source": "./plugins/komdosh-dev-spring-events",
       "category": "messaging",
       "tags": [
         "kafka",
@@ -39,7 +36,7 @@
     },
     {
       "name": "komdosh-dev-spring-qa",
-      "source": "komdosh-dev-spring-qa",
+      "source": "./plugins/komdosh-dev-spring-qa",
       "category": "quality",
       "tags": [
         "qa",
@@ -52,7 +49,7 @@
     },
     {
       "name": "komdosh-dev-spring-platform",
-      "source": "komdosh-dev-spring-platform",
+      "source": "./plugins/komdosh-dev-spring-platform",
       "category": "architecture",
       "tags": [
         "vendor-decoupling",
@@ -63,7 +60,7 @@
     },
     {
       "name": "komdosh-dev-kotlin-extras",
-      "source": "komdosh-dev-kotlin-extras",
+      "source": "./plugins/komdosh-dev-kotlin-extras",
       "category": "maintenance",
       "tags": [
         "dependencies",
@@ -75,7 +72,7 @@
     },
     {
       "name": "komdosh-dev-spring-orchestrator",
-      "source": "komdosh-dev-spring-orchestrator",
+      "source": "./plugins/komdosh-dev-spring-orchestrator",
       "category": "workflow",
       "tags": [
         "lifecycle",
@@ -87,7 +84,7 @@
     },
     {
       "name": "komdosh-dev-kotlin-revealer",
-      "source": "komdosh-dev-kotlin-revealer",
+      "source": "./plugins/komdosh-dev-kotlin-revealer",
       "category": "knowledge",
       "tags": [
         "adr",
@@ -99,7 +96,7 @@
     },
     {
       "name": "komdosh-dev-kotlin-doc-revealer",
-      "source": "komdosh-dev-kotlin-doc-revealer",
+      "source": "./plugins/komdosh-dev-kotlin-doc-revealer",
       "category": "knowledge",
       "tags": [
         "documentation",
@@ -111,7 +108,7 @@
     },
     {
       "name": "komdosh-dev-spring-release",
-      "source": "komdosh-dev-spring-release",
+      "source": "./plugins/komdosh-dev-spring-release",
       "category": "workflow",
       "tags": [
         "release",
@@ -124,7 +121,7 @@
     },
     {
       "name": "komdosh-dev-spring-security",
-      "source": "komdosh-dev-spring-security",
+      "source": "./plugins/komdosh-dev-spring-security",
       "category": "quality",
       "tags": [
         "security",
@@ -137,7 +134,7 @@
     },
     {
       "name": "komdosh-dev-spring-avro",
-      "source": "komdosh-dev-spring-avro",
+      "source": "./plugins/komdosh-dev-spring-avro",
       "category": "messaging",
       "tags": [
         "avro",
@@ -149,7 +146,7 @@
     },
     {
       "name": "komdosh-dev-tasker",
-      "source": "komdosh-dev-tasker",
+      "source": "./plugins/komdosh-dev-tasker",
       "category": "workflow",
       "tags": [
         "jira",
@@ -161,7 +158,7 @@
     },
     {
       "name": "komdosh-dev-arch-planner",
-      "source": "komdosh-dev-arch-planner",
+      "source": "./plugins/komdosh-dev-arch-planner",
       "category": "workflow",
       "tags": [
         "planning",
