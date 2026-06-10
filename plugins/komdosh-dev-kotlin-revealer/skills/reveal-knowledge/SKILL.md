@@ -1,5 +1,6 @@
 ---
 name: reveal-knowledge
+user-invocable: false
 description: Multi-source retrieval over the project's accumulated knowledge — ADRs, specs, plans, notes, code-embedded decision comments, commit messages, and any RAG / MCP-backed knowledge bases the developer has wired up (codebase-memory-mcp, lookstream-code-rag, Confluence/Notion/Linear, context7, ref-context). Returns ranked snippets with source + date + excerpt. Read-only. Use when an agent or developer asks "have we decided this before", "what's the rationale for X", "show me prior work on Y".
 ---
 

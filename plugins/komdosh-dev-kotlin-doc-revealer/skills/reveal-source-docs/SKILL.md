@@ -1,5 +1,6 @@
 ---
 name: reveal-source-docs
+user-invocable: false
 description: Walks a fixed source-documentation ladder from cheapest to most expensive — in-repo KDoc/Javadoc → project /docs/ → ~/.claude/docs-cache/ → MCP (codebase-memory, context7, ref-context) → canonical web URLs via WebFetch → WebSearch+WebFetch → pre-indexed JAR listings → JAR decompilation as edge-case-only last resort. Stops at the first source that confidently answers, normalises the snippet, writes a cache entry, and returns a JSON descriptor (winning_source, snippets, provenance, related, gaps). Read-only on project files; only writes under ~/.claude/docs-cache/. Use when an agent needs to find documentation for a symbol, topic, library, or framework without re-explaining from training data.
 ---
 

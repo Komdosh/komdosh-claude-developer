@@ -26,9 +26,7 @@ Release engineering on top of `komdosh-dev-spring-core`. Two tracks under one pl
 | [`/publish-prep`](commands/publish-prep.md) | [`check-publish-config`](skills/check-publish-config/SKILL.md) | Validates Maven coordinates, POM completeness (developers, scm, license), signing config, repository creds reachable, sources/javadoc jars configured, no `-SNAPSHOT` deps. Read-only. |
 | [`/deprecate-api`](commands/deprecate-api.md) | [`library-publisher`](agents/library-publisher.md) | Mark a public symbol `@Deprecated(...)` with replacement, set sunset version, add a CHANGELOG breadcrumb, surface known internal call-sites. |
 
-Hook (auto-installed via `hooks/hooks.json`):
-
-- `pre-tag-validation.sh` — fires `PreToolUse` on `Bash` when the command starts with `git tag` (excluding `-d`, `-l`, `--list`, and the bare list form). Detects the track via `service.yaml` `kind:` (or build heuristics), then prints a reminder to run `/release-prep --track=<detected>` first. Advisory only (exit 0) — never invokes the readiness skill itself, never blocks the tag. The actual validation lives in `verify-release-readiness-{service,library}`; the hook's job is to surface that the user should run it before the tag command actually creates the tag.
+This plugin ships **no hooks** by design. The pre-tag discipline ("run `/release-prep` before creating a tag") is owned by the `release-coordinator` agent and `rules/release-engineering.md` — not by a per-Bash-call hook.
 
 Rules:
 

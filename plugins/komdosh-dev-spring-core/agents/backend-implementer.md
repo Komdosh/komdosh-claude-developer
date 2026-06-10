@@ -1,6 +1,7 @@
 ---
 name: backend-implementer
 model: sonnet
+skills: [coroutine-safety-scan, module-boundary-check]
 description: "Implements or modifies behavior within one service. Use when adding a feature, changing logic, wiring a new component, or modifying existing handlers and services. Reads existing source first, mirrors package structure, respects hexagonal boundaries and all coroutine safety rules. Triggers on: 'implement', 'add feature', 'change behavior', 'modify logic', 'wire this up', 'add this to the service'."
 ---
 

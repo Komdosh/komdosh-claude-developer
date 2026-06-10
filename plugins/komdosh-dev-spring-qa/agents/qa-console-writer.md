@@ -1,6 +1,7 @@
 ---
 name: qa-console-writer
 model: sonnet
+skills: [discover-api-surface]
 description: "Generates a self-contained HTML QA console (docs/qa/qa-console.html) — single file, inline CSS/JS, vanilla fetch, no CDN, no build step. Auto-generated forms per endpoint, env switcher, response panel, request history, runs from file://. Use when a developer or non-CLI teammate needs a friendly UI to exercise endpoints. Triggers on: 'qa console', 'html test page', 'browser tester', 'manual test UI', 'self-contained tester'."
 ---
 

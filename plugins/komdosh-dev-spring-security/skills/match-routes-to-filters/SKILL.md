@@ -1,5 +1,6 @@
 ---
 name: match-routes-to-filters
+user-invocable: false
 description: "Builds a coverage matrix of every @RestController handler vs the project's SecurityWebFilterChain rules. Classifies each handler as authenticated / permit-all-by-rule / unmatched / shadowed. Surfaces the file:line for both the handler and the filter rule that matched (or didn't). Read-only."
 ---
 

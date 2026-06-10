@@ -1,13 +1,28 @@
 {
-  "_comment": "Plugin-shipped hooks for komdosh-dev-spring-core. Auto-loaded by Claude Code when this plugin is installed. Each hook script reads the tool input as JSON from stdin and prints any notice to stderr — Claude Code surfaces stderr to the model.",
+  "_comment": "Plugin-shipped hooks for komdosh-dev-spring-core. Auto-loaded by Claude Code when this plugin is installed. Each hook script reads the hook input as JSON from stdin and emits the Claude Code JSON output protocol on stdout (hookSpecificOutput.additionalContext) — the only exit-0 channel the model actually sees. Scripts exit 0 in every path; they advise, never block.",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/session-context.sh",
+            "timeout": 10,
+            "statusMessage": "Loading service context"
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/migration-register-reminder.sh"
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/migration-register-reminder.sh",
+            "timeout": 15,
+            "statusMessage": "Checking Liquibase changelog registration"
           }
         ]
       }

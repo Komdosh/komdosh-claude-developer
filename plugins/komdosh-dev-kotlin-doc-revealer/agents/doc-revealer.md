@@ -1,6 +1,8 @@
 ---
 name: doc-revealer
 model: sonnet
+disallowedTools: [Edit, MultiEdit, NotebookEdit]
+skills: [reveal-source-docs]
 description: "Reveals source documentation for any symbol, topic, framework, library, or open-source project — using the cheapest source first (in-repo KDoc/Javadoc, project /docs, then ~/.claude/docs-cache, then MCP context7/ref-context/codebase-memory, then canonical web docs via WebFetch with WebSearch fallback, then pre-indexed JAR listings, with JAR decompilation as the explicit last resort). Caches resolved snippets to ~/.claude/docs-cache/ so repeat queries are instant. Use when an agent or developer asks 'what does this class do', 'what is the signature of X', 'how do I use library Y', 'where is Foo documented', 'what does the Spring docs say about Z'. Never modifies project source. Triggers on: 'doc reveal', 'show me the docs for', 'what does X do', 'how does Y work', 'API of Z', 'find documentation for', 'kdoc on'."
 ---
 

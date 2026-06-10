@@ -1,5 +1,6 @@
 ---
 name: jooq-generation-freshness
+allowed-tools: Grep, Glob, Read, Bash(find:*), Bash(stat:*)
 description: Check whether jOOQ-generated classes (Tables, Records, Indexes, Keys) are stale relative to the latest Liquibase changeset. Saves "method does not exist on OrdersRecord" loops after a migration. Run after editing any V*.sql file, before backend-implementer references jOOQ types.
 ---
 

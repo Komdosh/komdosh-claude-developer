@@ -1,70 +1,176 @@
 {
   "name": "komdosh-claude-developer",
+  "description": "Definitive Kotlin + Spring backend engineering suite for Claude Code — 12 composable plugins covering the full development lifecycle: implementation, events, Avro, QA, security audits, vendor decoupling, knowledge retrieval, release engineering, and Jira-driven task flow.",
+  "version": "0.3.0",
   "owner": {
     "name": "Andrey Tabakov",
     "email": "ave.tabakov@gmail.com",
     "url": "https://github.com/komdosh"
   },
+  "metadata": {
+    "pluginRoot": "./plugins"
+  },
   "plugins": [
     {
       "name": "komdosh-dev-spring-core",
-      "source": "./plugins/komdosh-dev-spring-core",
+      "source": "komdosh-dev-spring-core",
+      "category": "foundation",
+      "tags": [
+        "kotlin",
+        "spring",
+        "webflux",
+        "coroutines",
+        "hexagonal"
+      ],
       "description": "Must-have foundation for Kotlin + Spring WebFlux/coroutines services. 15 agents · 10 commands · 8 mandatory skills · 10 rule documents · 1 post-edit hook — enforcing hexagonal architecture, coroutine safety, RFC 9457 errors, and the persistence/observability/testing conventions every consumer service needs."
     },
     {
       "name": "komdosh-dev-spring-events",
-      "source": "./plugins/komdosh-dev-spring-events",
+      "source": "komdosh-dev-spring-events",
+      "category": "messaging",
+      "tags": [
+        "kafka",
+        "sqs",
+        "rabbitmq",
+        "consumers",
+        "idempotency"
+      ],
       "description": "Kafka / SQS / RabbitMQ consumer authoring. Adds the event-consumer-author agent and rules/event-consumers.md (manual offset/ack, mandatory idempotency, transient-vs-poison error policy, schema-registry DTOs, 8 forbidden patterns). Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-spring-qa",
-      "source": "./plugins/komdosh-dev-spring-qa",
-      "description": "End-to-end QA artifact generation. /qa-plan + /qa-postman + /qa-console — markdown checklist, Newman-runnable Postman collection, self-contained HTML console — all from a shared discover-api-surface skill (OpenAPI → Springdoc → static parse). Plus a PostToolUse hook that warns on stale plans. Requires komdosh-dev-spring-core."
+      "source": "komdosh-dev-spring-qa",
+      "category": "quality",
+      "tags": [
+        "qa",
+        "postman",
+        "newman",
+        "manual-testing",
+        "api"
+      ],
+      "description": "End-to-end QA artifact generation. /qa-plan + /qa-postman + /qa-console — markdown checklist, Newman-runnable Postman collection, self-contained HTML console — all from a shared discover-api-surface skill (OpenAPI → Springdoc → static parse). Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-spring-platform",
-      "source": "./plugins/komdosh-dev-spring-platform",
+      "source": "komdosh-dev-spring-platform",
+      "category": "architecture",
+      "tags": [
+        "vendor-decoupling",
+        "abstractions",
+        "platform-module"
+      ],
       "description": "Audit application/ for vendor-coupling leaks (Micrometer, jOOQ, Reactor, Jackson, Kafka client, R2DBC) and stage abstractions into a leaf common/ module. /audit-leaks (audit + extract modes), platform-developer agent, rules/platform-module.md. Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-kotlin-extras",
-      "source": "./plugins/komdosh-dev-kotlin-extras",
+      "source": "komdosh-dev-kotlin-extras",
+      "category": "maintenance",
+      "tags": [
+        "dependencies",
+        "flaky-tests",
+        "gatling",
+        "load-testing"
+      ],
       "description": "Niche tooling — install only if needed. /upgrade (one-library-at-a-time bumps with changelog awareness), /detect-flakes (re-run + classify + route), /load-test-new (Gatling scaffolder). Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-spring-orchestrator",
-      "source": "./plugins/komdosh-dev-spring-orchestrator",
+      "source": "komdosh-dev-spring-orchestrator",
+      "category": "workflow",
+      "tags": [
+        "lifecycle",
+        "orchestration",
+        "gates",
+        "supervisor"
+      ],
       "description": "Top-level workflow supervisor + advisor + orchestrator. /lifecycle (status | next | orchestrate | audit) reads project state, computes a 16-gate pipeline (requirement → spec → ADR → plan → code → tests → migrations → preflight scans → verification → review → QA → readiness → PR), recommends the next action with rationale, and (with confirmation) chains the work toward 'ready to ship'. Detects which marketplace plugins are installed and skips inapplicable gates as N/A. Also ships /recommend [task] + the recommend-plugin skill — reads the marketplace catalog at runtime and points sessions at the right plugin + agent/command/skill for the task at hand, with install hints. Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-kotlin-revealer",
-      "source": "./plugins/komdosh-dev-kotlin-revealer",
+      "source": "komdosh-dev-kotlin-revealer",
+      "category": "knowledge",
+      "tags": [
+        "adr",
+        "rag",
+        "knowledge-retrieval",
+        "decisions"
+      ],
       "description": "Surfaces accumulated project knowledge — ADRs, specs, plans, notes, code-embedded // DECISION/RATIONALE/NOTE/WHY comments, commit archaeology, and any RAG/MCP-backed knowledge bases the developer has wired up (codebase-memory, lookstream-code-rag, Confluence/Notion/Linear, context7, ref-context). /reveal <query> (modes: survey / decision-trace / gap-find) returns a synthesised answer with inline citations, lists gaps explicitly, and recommends one concrete next step. Read-only; gracefully degrades when MCP isn't configured. Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-kotlin-doc-revealer",
-      "source": "./plugins/komdosh-dev-kotlin-doc-revealer",
+      "source": "komdosh-dev-kotlin-doc-revealer",
+      "category": "knowledge",
+      "tags": [
+        "documentation",
+        "kdoc",
+        "javadoc",
+        "context7"
+      ],
       "description": "Smart source-documentation discovery for internal classes, project architecture, frameworks, libraries, and open-source. /doc-reveal <symbol|topic|library> backed by the doc-revealer agent and the reveal-source-docs skill. Walks a 10-step ladder from cheapest to most expensive — in-repo KDoc/Javadoc → project /docs/ → ~/.claude/docs-cache/ → MCP (codebase-memory, context7, ref-context) → canonical web URLs (docs.spring.io / javadoc.io / kotlinlang.org / GitHub) via WebFetch → WebSearch fallback → pre-indexed JAR listings → JAR decompilation as edge-case-only last resort. Caches resolved snippets to ~/.claude/docs-cache/ so repeat queries are instant. Read-only on project source. Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-spring-release",
-      "source": "./plugins/komdosh-dev-spring-release",
-      "description": "Release engineering for Kotlin + Spring services AND shared Kotlin libraries — two tracks, one plugin. Auto-detects which track applies (service.yaml `kind` field, or build heuristics) and runs the matching gates. Service track: /release-prep · /changelog · /version-bump · /release-notes · /rollback-playbook (forward-fix-aware). Library track: /release-prep · /changelog · /version-bump (ABI-aware) · /release-notes · /abi-check · /publish-prep · /deprecate-api. Ships release-coordinator + changelog-writer + library-publisher agents, six skills (detect-release-type, verify-release-readiness-service, verify-release-readiness-library, produce-rollback-playbook, produce-abi-report, check-publish-config), an advisory pre-tag hook, and rules/release-engineering.md. Requires komdosh-dev-spring-core."
+      "source": "komdosh-dev-spring-release",
+      "category": "workflow",
+      "tags": [
+        "release",
+        "changelog",
+        "semver",
+        "abi",
+        "publishing"
+      ],
+      "description": "Release engineering for Kotlin + Spring services AND shared Kotlin libraries — two tracks, one plugin. Auto-detects which track applies (service.yaml `kind` field, or build heuristics) and runs the matching gates. Service track: /release-prep · /changelog · /version-bump · /release-notes · /rollback-playbook (forward-fix-aware). Library track: /release-prep · /changelog · /version-bump (ABI-aware) · /release-notes · /abi-check · /publish-prep · /deprecate-api. Ships release-coordinator + changelog-writer + library-publisher agents, six skills (detect-release-type, verify-release-readiness-service, verify-release-readiness-library, produce-rollback-playbook, produce-abi-report, check-publish-config), and rules/release-engineering.md. Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-spring-security",
-      "source": "./plugins/komdosh-dev-spring-security",
+      "source": "komdosh-dev-spring-security",
+      "category": "quality",
+      "tags": [
+        "security",
+        "audit",
+        "jwt",
+        "rfc9457",
+        "spring-security"
+      ],
       "description": "Defensive security audits for Kotlin + Spring WebFlux services. Spring-specific only — no commodity scanners. /security-audit composite + three narrowed entry points: /auth-audit (route ↔ SecurityWebFilterChain coverage matrix, flags unauthenticated handlers and shadowed permit-all rules), /error-leakage-check (RFC 9457 hygiene — no stack traces, SQL state, or persistence IDs in response bodies; catch-all Exception → 500 with correlation id), /jwt-rotation (ReactiveJwtDecoder presence, algorithm allowlist excludes `none` and prevents algorithm confusion, JWK refresh policy, issuer + audience validators, no prod keys in test fixtures). Ships security-auditor agent, three skills, rules/security-audit.md classifying findings as BLOCKER / WARNING / INFO. Read-only; never modifies code or extracts secrets. Distinct from core's security-expert which writes filters; this audits what's already there. Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-spring-avro",
-      "source": "./plugins/komdosh-dev-spring-avro",
+      "source": "komdosh-dev-spring-avro",
+      "category": "messaging",
+      "tags": [
+        "avro",
+        "schema-registry",
+        "codegen",
+        "kafka"
+      ],
       "description": "Avro schema authoring + the autogenerated event-DTO pipeline for Kotlin/Spring services. avro-schema-author agent · /avro-new-event (toolchain detect → schema author → codegen verify → registry-subject hand-off) · /avro-evolve (compat-aware bump: additive in-place vs versioned-up v2) · /avro-audit (BLOCKER/WARNING/INFO report on schemas, codegen, registry config) · 2 skills (discover-avro-toolchain, verify-schema-compat) · 3 rules (schemas, codegen, registry). Defaults to davidmc24/gradle-avro-plugin and Confluent Schema Registry; detects Apicurio and avro4k. Enforces T-first nullable unions, required doc fields, decimal/uuid/timestamp-millis logical types, aliases on rename, BACKWARD compat default, auto.register.schemas=false in prod, no inlined registry credentials. Sits upstream of komdosh-dev-spring-events (consumers read the DTOs this plugin produces). Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-tasker",
-      "source": "./plugins/komdosh-dev-tasker",
+      "source": "komdosh-dev-tasker",
+      "category": "workflow",
+      "tags": [
+        "jira",
+        "atlassian",
+        "mcp",
+        "task-management"
+      ],
       "description": "Jira-driven task entry. /jira-task [PROJ|PROJ-123] pulls one ticket from a project's Todo column via the Atlassian MCP, applies the first forward workflow transition (typically Todo → In Progress), hands the description to the lifecycle-supervisor as the captured requirement, and on a clean gate map applies the second forward transition (typically → In Review) — otherwise asks the user. Forward-only walk: never hardcodes status names; trusts the project's Jira workflow. Refuses to run when no Atlassian MCP is detected (no manual-paste fallback). Explicit-trigger only — the slash command is the sole entry point. Ships discover-jira-task skill + jira-task-coordinator agent. Optional .claude/jira.yaml (project: PROJ) for project-key defaults. Requires komdosh-dev-spring-core + komdosh-dev-spring-orchestrator."
+    },
+    {
+      "name": "komdosh-dev-arch-planner",
+      "source": "komdosh-dev-arch-planner",
+      "category": "workflow",
+      "tags": [
+        "planning",
+        "architecture",
+        "adr",
+        "agentic-plan",
+        "evidence-inventory"
+      ],
+      "description": "Architecture-driven implementation planning. /implementation-plan <service> resolves the company architecture repository (flag → .claude/architecture.yaml → well-known paths → code-RAG MCP degraded mode), locates the service architecture package under top-level/contexts/, assembles a tiered evidence inventory (entry contracts → service package → domain → system → ADR constraints → business scope/roadmap → dev-ex standards), defers to the architecture repo's own plan-service-implementation contract as the output authority, probes current implementation state via graph/RAG MCP, and writes docs/plans/<date>-<service>-implementation-plan.md — ordered todos with priority, inputs, write scope, acceptance criteria, verification, dependencies, and an Executor column mapping each todo to the marketplace agent or command that runs it. Read-only on the architecture repo; plans land where core's /continue-plan resumes. Requires komdosh-dev-spring-core."
     }
   ]
 }

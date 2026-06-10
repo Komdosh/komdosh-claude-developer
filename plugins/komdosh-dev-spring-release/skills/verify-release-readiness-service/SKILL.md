@@ -1,5 +1,6 @@
 ---
 name: verify-release-readiness-service
+user-invocable: false
 description: "Service-track release readiness composite gate. Runs run-verification, liquibase-changeset-immutability, check-adr-required, scans for `// TODO(release)` markers, confirms no uncommitted changes, checks QA artifact freshness (if qa plugin installed), and probes a smoke endpoint on the staging-equivalent profile if reachable. PASS only when every sub-gate passes. Read-only — never modifies code or commits."
 ---
 

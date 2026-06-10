@@ -1,6 +1,7 @@
 ---
 name: migration-writer
 model: haiku
+skills: [liquibase-changeset-immutability]
 description: "Authors a single Liquibase SQL changeset for schema changes. Use when a new table, column, index, or constraint is needed. Touches only adapters/outbound/src/main/resources/db/changelog/. Triggers on: 'add migration', 'schema change', 'new column', 'new table', 'add index', 'alter table'."
 ---
 

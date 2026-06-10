@@ -1,5 +1,6 @@
 ---
 name: discover-api-surface
+user-invocable: false
 description: Resolve a Kotlin/Spring WebFlux service's HTTP surface into a normalised JSON IR (endpoints, schemas, auth, sample values). Tries OpenAPI file → Springdoc runtime if hinted → static controller parse, in that order. Use before generating QA artifacts (manual plan, Postman collection, QA console). Emits the IR to a temp path; do not commit it.
 ---
 

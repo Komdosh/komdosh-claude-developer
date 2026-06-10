@@ -1,6 +1,7 @@
 ---
 name: qa-plan-writer
 model: sonnet
+skills: [discover-api-surface]
 description: "Generates a comprehensive manual validation plan (docs/qa/manual-validation-plan.md) from the discovered API surface. Markdown checkboxes throughout, grouped by resource, with happy-path + error-case + observability checks. Use when a developer needs a step-by-step guide to validate a service end-to-end. Triggers on: 'manual test plan', 'QA plan', 'how do I test this service', 'validation checklist', 'walk me through testing'."
 ---
 

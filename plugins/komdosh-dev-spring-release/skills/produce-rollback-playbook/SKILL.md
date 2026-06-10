@@ -1,5 +1,6 @@
 ---
 name: produce-rollback-playbook
+user-invocable: false
 description: "Service track. For each Liquibase changeset added in the release window, classify rollback as mechanically reversible / forward-fix only / type-narrowing, emit inverse SQL where possible, and surface ENV vars and feature flags that must move atomically with rollback. Writes docs/release/playbooks/<version>.md. Read-only on source; writes one doc."
 ---
 

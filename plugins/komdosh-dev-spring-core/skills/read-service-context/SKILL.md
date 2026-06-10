@@ -1,5 +1,7 @@
 ---
 name: read-service-context
+allowed-tools: Grep, Glob, Read
+user-invocable: false
 description: Locate service.yaml (or fallback docs/README.md), read module structure, extract package name. Use when session context is not already loaded and you need service metadata before writing code or running commands.
 ---
 

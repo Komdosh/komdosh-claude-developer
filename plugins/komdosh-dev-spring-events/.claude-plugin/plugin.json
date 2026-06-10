@@ -1,7 +1,7 @@
 {
   "name": "komdosh-dev-spring-events",
   "displayName": "Kotlin/Spring Events",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Add Kafka / SQS / RabbitMQ consumer authoring on top of komdosh-dev-spring-core. Ships the event-consumer-author agent and rules/event-consumers.md — manual offset/ack policy, mandatory idempotency via processed_events table, transient-vs-poison error handling, schema-registry DTOs, the one permitted runBlocking at the listener-thread boundary, Testcontainers tests, 8 forbidden patterns. Requires komdosh-dev-spring-core for the foundational rules and core agents (migration-writer, test-writer).",
   "author": {
     "name": "Andrey Tabakov",
@@ -11,5 +11,17 @@
   "homepage": "https://github.com/komdosh/komdosh-claude-developer",
   "repository": "https://github.com/komdosh/komdosh-claude-developer",
   "license": "MIT",
-  "keywords": ["kotlin", "spring", "kafka", "sqs", "rabbitmq", "event-driven", "consumer", "idempotency"]
+  "keywords": [
+    "kotlin",
+    "spring",
+    "kafka",
+    "sqs",
+    "rabbitmq",
+    "event-driven",
+    "consumer",
+    "idempotency"
+  ],
+  "dependencies": [
+    "komdosh-dev-spring-core"
+  ]
 }

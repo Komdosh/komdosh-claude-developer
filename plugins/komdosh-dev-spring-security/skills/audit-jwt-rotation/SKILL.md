@@ -1,5 +1,6 @@
 ---
 name: audit-jwt-rotation
+user-invocable: false
 description: "Audits JWT/JWK plumbing for Spring Security OAuth2 resource server: ReactiveJwtDecoder presence, algorithm allowlist (no `none`, no symmetric in asymmetric contexts), JWK source refresh policy, issuer + audience validation, expiration enforcement, no production keys in test fixtures. Read-only — never extracts the actual key material, only checks configuration shape."
 ---
 

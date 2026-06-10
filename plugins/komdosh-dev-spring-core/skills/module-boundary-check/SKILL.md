@@ -1,5 +1,6 @@
 ---
 name: module-boundary-check
+allowed-tools: Grep, Glob, Read
 description: Grep-based fast preflight that imports across modules respect the hexagonal arrows from rules/hexagonal.md. Catches `domain/` importing Spring/jOOQ/Kafka/Jackson, and `adapters/inbound` importing `adapters/outbound`, in seconds. Cheaper than running ArchUnit. Run after editing any file under domain/, application/, or adapters/.
 ---
 

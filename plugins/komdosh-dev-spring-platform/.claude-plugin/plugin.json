@@ -1,7 +1,7 @@
 {
   "name": "komdosh-dev-spring-platform",
   "displayName": "Kotlin/Spring Platform Decoupling",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Audit application/ and domain/ for vendor-coupling leaks (Micrometer, jOOQ, Reactor, Jackson, Spring beyond stereotypes, Kafka client, R2DBC) and stage abstractions into a leaf common/ module. Ships /audit-leaks (audit + extract modes), the platform-developer agent, and rules/platform-module.md (defines the common/ module shape, abstraction patterns for Metrics/Tx/Time/JSON/Outbox/Ids, ArchUnit guards). Requires komdosh-dev-spring-core for foundational rules and the ADR workflow.",
   "author": {
     "name": "Andrey Tabakov",
@@ -11,5 +11,17 @@
   "homepage": "https://github.com/komdosh/komdosh-claude-developer",
   "repository": "https://github.com/komdosh/komdosh-claude-developer",
   "license": "MIT",
-  "keywords": ["kotlin", "spring", "hexagonal", "vendor-decoupling", "abstractions", "platform-module", "common", "archunit"]
+  "keywords": [
+    "kotlin",
+    "spring",
+    "hexagonal",
+    "vendor-decoupling",
+    "abstractions",
+    "platform-module",
+    "common",
+    "archunit"
+  ],
+  "dependencies": [
+    "komdosh-dev-spring-core"
+  ]
 }

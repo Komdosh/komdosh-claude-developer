@@ -1,6 +1,7 @@
 ---
 name: change-reviewer
 model: opus
+disallowedTools: [Edit, Write, MultiEdit, NotebookEdit]
 description: "Reviews code changes across five dimensions: correctness, contract-hygiene, observability, abstraction-quality, and future-proofing. Use when a diff is ready for review. Triggers on: 'review my changes', 'is this correct', 'check my abstractions', 'future-proof check', 'maintainability review', 'code review', 'review this diff'."
 ---
 

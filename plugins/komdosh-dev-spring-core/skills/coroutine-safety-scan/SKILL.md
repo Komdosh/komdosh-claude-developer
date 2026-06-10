@@ -1,5 +1,6 @@
 ---
 name: coroutine-safety-scan
+allowed-tools: Grep, Glob, Read
 description: Grep-based scan for the 12 forbidden coroutine patterns from rules/kotlin-coroutines.md across touched Kotlin files. Run before declaring a code change done — catches runBlocking, Thread.sleep, @Transactional on suspend fun, withContext inside @Transactional, MDC across suspension, GlobalScope, blocking JVM primitives, and more, in seconds. Cheaper than waiting for run-verification or detekt.
 ---
 

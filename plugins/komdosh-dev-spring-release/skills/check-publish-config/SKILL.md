@@ -1,5 +1,6 @@
 ---
 name: check-publish-config
+user-invocable: false
 description: "Library track. Validates Maven coordinates, POM completeness (developers, scm, license, description, url), signing config, target-repository credentials reachability, sources/javadoc jars configured, no -SNAPSHOT deps in runtimeClasspath. Read-only — does not extract keys, does not publish."
 ---
 

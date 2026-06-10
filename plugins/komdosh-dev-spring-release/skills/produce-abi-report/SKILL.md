@@ -1,5 +1,6 @@
 ---
 name: produce-abi-report
+user-invocable: false
 description: "Library track. Diffs the public Kotlin/Java API surface against the last released tag. Prefers kotlinx.binary-compatibility-validator (api/<module>.api baselines); falls back to japicmp against the published jar. Per-symbol classification: added / deprecated / changed-signature / removed. Drives /version-bump on the library track. Read-only on source; writes one report doc."
 ---
 

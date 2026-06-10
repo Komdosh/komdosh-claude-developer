@@ -16,6 +16,12 @@
 #   7. Hook .sh files: bash syntax OK, executable bit set.
 #   8. set -euo pipefail + grep|head pipelines without `|| true` (the bug class).
 #   9. No remaining cross-references to renamed plugins.
+#  10. plugin.json completeness: version, displayName, license, keywords; dependencies resolve.
+#  11. marketplace.json entries carry category + tags.
+#  12. Agent model is an alias (haiku|sonnet|opus|inherit) — dated model IDs rot.
+#  13. hooks.json hygiene: ${CLAUDE_PLUGIN_ROOT} command paths + explicit timeout.
+#  14. Skill/agent description budget: ≤1024 chars warn at 900 (Claude Code caps entries at 1536).
+#  15. Hook scripts emit the JSON output protocol, not bare stderr hints.
 
 set -uo pipefail
 
@@ -59,13 +65,19 @@ done
 
 # ---------------------------------------------------------------------
 section "3. marketplace.json plugins all exist"
+plugin_root=$(jq -r '.metadata.pluginRoot // "."' .claude-plugin/marketplace.json 2>/dev/null)
 while read -r entry; do
   name=$(printf '%s' "$entry" | jq -r .name)
   source=$(printf '%s' "$entry" | jq -r .source)
-  if [ -d "$source" ]; then
-    pass "$name → $source"
+  # resolve relative sources against metadata.pluginRoot (bare names allowed)
+  case "$source" in
+    ./*) resolved="$source" ;;
+    *)   resolved="$plugin_root/$source" ;;
+  esac
+  if [ -d "$resolved" ]; then
+    pass "$name → $resolved"
   else
-    fail "$name → $source (directory missing)"
+    fail "$name → $resolved (directory missing)"
   fi
 done < <(jq -c '.plugins[]' .claude-plugin/marketplace.json 2>/dev/null)
 
@@ -155,6 +167,106 @@ for old in "${renamed[@]}"; do
   else
     fail "references to $old still present in:"
     printf '%s\n' "$hits" | sed 's/^/        /' >&2
+  fi
+done
+
+# ---------------------------------------------------------------------
+section "10. plugin.json completeness + dependency resolution"
+all_names=$(jq -r '.plugins[].name' .claude-plugin/marketplace.json 2>/dev/null)
+for f in plugins/*/.claude-plugin/plugin.json; do
+  name=$(jq -r '.name // ""' "$f")
+  missing=""
+  for field in version displayName description license; do
+    val=$(jq -r --arg k "$field" '.[$k] // ""' "$f")
+    [ -n "$val" ] || missing="$missing $field"
+  done
+  kw=$(jq -r '(.keywords // []) | length' "$f")
+  [ "$kw" -gt 0 ] || missing="$missing keywords"
+  bad_deps=""
+  while read -r dep; do
+    [ -n "$dep" ] || continue
+    printf '%s\n' "$all_names" | grep -qxF "$dep" || bad_deps="$bad_deps $dep"
+  done < <(jq -r '(.dependencies // [])[] | if type == "object" then .name else . end' "$f")
+  if [ -z "$missing" ] && [ -z "$bad_deps" ]; then
+    pass "$name"
+  else
+    [ -n "$missing" ]  && fail "$name — missing plugin.json field(s):$missing"
+    [ -n "$bad_deps" ] && fail "$name — dependencies not in marketplace:$bad_deps"
+  fi
+done
+
+# ---------------------------------------------------------------------
+section "11. marketplace entries carry category + tags"
+while read -r entry; do
+  name=$(printf '%s' "$entry" | jq -r .name)
+  cat_=$(printf '%s' "$entry" | jq -r '.category // ""')
+  tags=$(printf '%s' "$entry" | jq -r '(.tags // []) | length')
+  if [ -n "$cat_" ] && [ "$tags" -gt 0 ]; then
+    pass "$name [$cat_]"
+  else
+    fail "$name — missing category and/or tags in marketplace.json"
+  fi
+done < <(jq -c '.plugins[]' .claude-plugin/marketplace.json 2>/dev/null)
+
+# ---------------------------------------------------------------------
+section "12. Agent model is an alias, not a dated model ID"
+for f in plugins/*/agents/*.md; do
+  [ -f "$f" ] || continue
+  model=$(awk '/^---$/{c++; next} c==1' "$f" | grep -E '^model:' | head -1 | sed 's/^model:[[:space:]]*//')
+  case "$model" in
+    haiku|sonnet|opus|inherit) pass "$f ($model)" ;;
+    *) fail "$f — model '$model' is not an alias (haiku|sonnet|opus|inherit); dated IDs rot" ;;
+  esac
+done
+
+# ---------------------------------------------------------------------
+section "13. hooks.json hygiene: \${CLAUDE_PLUGIN_ROOT} + timeout"
+for f in plugins/*/hooks/hooks.json; do
+  [ -f "$f" ] || continue
+  bad=0
+  while read -r cmd; do
+    # shellcheck disable=SC2016  # intentional: matching the literal ${CLAUDE_PLUGIN_ROOT} placeholder, not expanding it
+    case "$cmd" in
+      '${CLAUDE_PLUGIN_ROOT}'*) ;;
+      *) fail "$f — hook command not rooted in \${CLAUDE_PLUGIN_ROOT}: $cmd"; bad=1 ;;
+    esac
+  done < <(jq -r '.hooks[][].hooks[].command' "$f" 2>/dev/null)
+  no_timeout=$(jq '[.hooks[][].hooks[] | select(has("timeout") | not)] | length' "$f" 2>/dev/null)
+  if [ "${no_timeout:-1}" -gt 0 ]; then
+    warn "$f — $no_timeout hook(s) without explicit timeout"
+  elif [ "$bad" -eq 0 ]; then
+    pass "$f"
+  fi
+done
+
+# ---------------------------------------------------------------------
+section "14. Frontmatter description budget (entry cap 1536 chars)"
+for f in plugins/*/agents/*.md plugins/*/skills/*/SKILL.md; do
+  [ -f "$f" ] || continue
+  len=$(awk '/^---$/{c++; next} c==1' "$f" | grep -E '^description:' | head -1 | wc -c | tr -d ' ')
+  if [ "$len" -gt 1536 ]; then
+    fail "$f — description ${len} chars exceeds the 1536-char listing cap (truncated at load)"
+  elif [ "$len" -gt 1200 ]; then
+    warn "$f — description ${len} chars; approaching the 1536-char listing cap"
+  else
+    pass "$f (${len} chars)"
+  fi
+done
+
+# ---------------------------------------------------------------------
+section "15. Hook scripts use the JSON output protocol"
+# stderr hints on exit 0 never reach the model; hints must go via
+# hookSpecificOutput.additionalContext JSON on stdout.
+for f in plugins/*/hooks/*.sh; do
+  [ -f "$f" ] || continue
+  stderr_hints=$(grep -cE 'cat >&2' "$f" || true)
+  has_json=$(grep -cF 'hookSpecificOutput' "$f" || true)
+  if [ "$stderr_hints" -gt 0 ]; then
+    fail "$f — emits hints via 'cat >&2' (invisible to the model on exit 0); use JSON additionalContext"
+  elif [ "$has_json" -eq 0 ]; then
+    warn "$f — no hookSpecificOutput JSON found (fine only if the hook is intentionally silent)"
+  else
+    pass "$f"
   fi
 done
 

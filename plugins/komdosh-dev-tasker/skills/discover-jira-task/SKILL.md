@@ -1,5 +1,6 @@
 ---
 name: discover-jira-task
+user-invocable: false
 description: Detect an Atlassian MCP server, resolve a Jira project key (arg → .claude/jira.yaml → AskUserQuestion), fetch one ticket from the project's Todo column (or by ticket key), apply the first forward workflow transition (typically Todo → In Progress), and return a structured ticket bundle. Refuses to run if no Atlassian MCP is detected. Read-mostly — the only side effect is the single forward transition. Used exclusively by the /jira-task command.
 ---
 

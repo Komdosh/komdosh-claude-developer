@@ -1,5 +1,6 @@
 ---
 name: lifecycle-status
+user-invocable: false
 description: Read project state (git, working tree, doc files, recent verification output) and compute the development-lifecycle gate map for the current branch. Returns a structured checklist of which gates are MET, PENDING, or N/A so the lifecycle-supervisor agent can recommend the next action. Pure read-only — never modifies code.
 ---
 

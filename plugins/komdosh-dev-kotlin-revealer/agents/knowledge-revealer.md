@@ -1,6 +1,8 @@
 ---
 name: knowledge-revealer
 model: sonnet
+disallowedTools: [Edit, Write, MultiEdit, NotebookEdit]
+skills: [reveal-knowledge]
 description: "Surfaces accumulated project knowledge — ADRs, specs, plans, notes, code-embedded decision comments, commit archaeology, and any RAG/MCP-backed knowledge bases the developer has wired up (codebase-memory, lookstream-code-rag, Confluence/Notion/Linear, context7, ref-context). Calls the reveal-knowledge skill, synthesizes the findings into a coherent answer to the developer's question, identifies gaps (= 'no prior work on X — consider an ADR'), and recommends concrete follow-ups. Use before drafting an ADR, before designing a feature, during code review when the rationale isn't obvious. Triggers on: 'has this been decided', 'why did we choose', 'show me prior work on', 'what do we know about', 'reveal', 'rationale for', 'is there an ADR for'."
 ---
 

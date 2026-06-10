@@ -16,9 +16,7 @@ Shared skill:
 
 - [`discover-api-surface`](skills/discover-api-surface/SKILL.md) — resolves your service's HTTP surface into a normalised JSON IR. Tries OpenAPI file, then Springdoc runtime if hinted, then static controller parse. Run **once per session** when generating multiple QA artifacts back-to-back.
 
-Hook (auto-installed via `hooks/hooks.json`):
-
-- `qa-staleness-warn.sh` — fires `PostToolUse` on edit of any `*Controller.kt`. If `docs/qa/manual-validation-plan.md` exists and is older than the controller, prints a hint to re-run `/qa-plan`.
+This plugin ships **no hooks** by design. Staleness of QA artifacts relative to controller mtimes is surfaced by core's `service-readiness-auditor` when it runs — not on every edit.
 
 ## Dependencies
 

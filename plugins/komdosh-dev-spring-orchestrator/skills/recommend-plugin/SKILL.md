@@ -1,5 +1,6 @@
 ---
 name: recommend-plugin
+user-invocable: false
 description: Read the current task from session context and recommend the single best komdosh-claude-developer plugin + agent/command/skill to invoke, with rationale and exact invocation. Triggers on "which plugin", "which agent", "which command", "is there a tool for", "what should I use for X", "how do I do X in this marketplace", or any moment a Claude session is uncertain which marketplace capability fits the task. Reads the marketplace catalog at runtime from marketplace.json + per-plugin plugin.json — never hand-maintained. Read-only.
 ---
 

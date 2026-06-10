@@ -1,5 +1,6 @@
 ---
 name: verify-release-readiness-library
+user-invocable: false
 description: "Library-track release readiness composite gate. Runs run-verification, scans for internal-API leakage in public packages, runs produce-abi-report and check-publish-config, confirms KDoc on public symbols, deprecation hygiene (replacement + sunset), no -SNAPSHOT deps, license headers present. PASS only when every sub-gate passes. Read-only."
 ---
 

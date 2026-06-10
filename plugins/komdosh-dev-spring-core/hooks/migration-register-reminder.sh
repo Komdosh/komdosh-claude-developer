@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Fires after Write/Edit/MultiEdit on a Liquibase changeset under db/changelog/.
 # If the new V<N>__<slug>.sql is not yet referenced in db.changelog-master.yaml,
-# prints a reminder. Otherwise no-ops.
+# emits the reminder as PostToolUse JSON additionalContext on stdout — the only
+# channel the model sees on exit 0 (stderr on exit 0 lands in the transcript, not Claude).
 
 set -euo pipefail
 
@@ -28,13 +29,14 @@ if grep -qF "$basename" "$master"; then
   exit 0
 fi
 
-cat >&2 <<EOF
-Migration hint: $basename was written but is not yet referenced in $master.
+hint="Migration hint: $basename was written but is not yet referenced in $master.
 Add an entry like:
   - include:
       file: db/changelog/$basename
       relativeToChangelogFile: true
-Liquibase will not apply unregistered changesets.
-EOF
+Liquibase will not apply unregistered changesets."
+
+jq -n --arg ctx "$hint" \
+  '{hookSpecificOutput: {hookEventName: "PostToolUse", additionalContext: $ctx}, suppressOutput: true}'
 
 exit 0

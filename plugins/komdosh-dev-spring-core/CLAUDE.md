@@ -11,7 +11,7 @@ Companion plugins ship in the same marketplace and add scoped capabilities on to
 | Plugin | Adds |
 |---|---|
 | `komdosh-dev-spring-events` | Kafka/SQS/RabbitMQ consumer authoring + `rules/event-consumers.md` |
-| `komdosh-dev-spring-qa` | `/qa-plan` `/qa-postman` `/qa-console`, the `discover-api-surface` skill, the QA-staleness hook |
+| `komdosh-dev-spring-qa` | `/qa-plan` `/qa-postman` `/qa-console`, the `discover-api-surface` skill |
 | `komdosh-dev-spring-platform` | `/audit-leaks` + `platform-developer` agent + `rules/platform-module.md` |
 | `komdosh-dev-kotlin-extras` | `dependency-upgrader` (`/upgrade`), `flaky-test-detector` (`/detect-flakes`), `load-test-scaffolder` (`/load-test-new`) |
 
@@ -26,7 +26,7 @@ This is a *behavioural* plugin — there is no application source code here, no 
 | `commands/*.md` | 10 slash commands (`/add-endpoint`, `/add-migration`, `/adr-new`, `/review`, `/verify-service`, `/test-fix`, `/pr-summary`, `/service-health`, `/analyze-requirements`, `/continue-plan`) |
 | `skills/<name>/SKILL.md` | 8 skills (mandatory checklists, tracked as todos when invoked) |
 | `rules/*.md` | 10 convention documents loaded via `@rules/...` imports below |
-| `hooks/` | 1 post-edit hook (`migration-register-reminder.sh`) auto-installed via `hooks/hooks.json` |
+| `hooks/` | 2 hooks (`session-context.sh` on SessionStart, `migration-register-reminder.sh` on PostToolUse) auto-installed via `hooks/hooks.json` |
 | `settings.recommended.json` | Suggested `permissions.allow`/`deny` for consumer projects to merge into `.claude/settings.json` |
 
 ## Big picture: how the pieces collaborate
@@ -57,8 +57,9 @@ Skills are mandatory checklists, not suggestions:
 - `liquibase-changeset-immutability` — uses git history to detect any `V*.sql` modified after first commit. Catches the next deploy's checksum-mismatch failure locally; tolerates whitespace-only and rollback-only edits.
 - `jooq-generation-freshness` — compares mtime of `*/build/generated/sources/jooq/` against the newest `V*.sql` to flag stale generated classes. Saves "method does not exist on Record" loops after a migration.
 
-Hooks (auto-installed via `hooks/hooks.json`):
-- `migration-register-reminder.sh` — fires `PostToolUse` on write of `db/changelog/V*__*.sql`. If the file is not yet referenced in `db.changelog-master.yaml`, prints the `include:` snippet to add.
+Hooks (auto-installed via `hooks/hooks.json`; both emit the Claude Code JSON output protocol — `hookSpecificOutput.additionalContext` — so the hint actually reaches the model):
+- `session-context.sh` — fires `SessionStart` (startup/resume/clear). If the project has a `service.yaml`, injects its head plus the mandatory preflight-skill map as additionalContext — the session starts oriented without spending a `read-service-context` invocation. Silent no-op in non-service repos.
+- `migration-register-reminder.sh` — fires `PostToolUse` on write of `db/changelog/V*__*.sql`. If the file is not yet referenced in `db.changelog-master.yaml`, returns the `include:` snippet to add.
 
 ## Conventions imported as rules
 

@@ -1,6 +1,7 @@
 ---
 name: service-readiness-auditor
 model: opus
+disallowedTools: [Edit, Write, MultiEdit, NotebookEdit]
 description: "Pre-production readiness audit of the full service (not a diff). Reviews docs completeness, hexagonal boundaries, test coverage shape, migration hygiene, coroutine safety, error handling, and observability. Triggers on: 'is this service ready', 'pre-prod check', 'readiness audit', 'what is missing before we ship', 'production readiness'."
 ---
 

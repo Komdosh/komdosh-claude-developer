@@ -1,7 +1,7 @@
 {
   "name": "komdosh-dev-tasker",
   "displayName": "Jira-driven Task Runner",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Pull one Jira ticket from a project's Todo column via the Atlassian MCP, transition it forward to In Progress, hand the ticket description to the lifecycle-supervisor as the captured requirement, then transition it to In Review when all gates pass (or ask the user otherwise). /jira-task [PROJ|PROJ-123]. Forward-only column walk — never hardcodes status names. Refuses to run if the Atlassian MCP is not detected. Requires komdosh-dev-spring-core + komdosh-dev-spring-orchestrator.",
   "author": {
     "name": "Andrey Tabakov",
@@ -11,5 +11,18 @@
   "homepage": "https://github.com/komdosh/komdosh-claude-developer",
   "repository": "https://github.com/komdosh/komdosh-claude-developer",
   "license": "MIT",
-  "keywords": ["jira", "atlassian", "mcp", "task", "ticket", "workflow", "orchestrator", "lifecycle"]
+  "keywords": [
+    "jira",
+    "atlassian",
+    "mcp",
+    "task",
+    "ticket",
+    "workflow",
+    "orchestrator",
+    "lifecycle"
+  ],
+  "dependencies": [
+    "komdosh-dev-spring-core",
+    "komdosh-dev-spring-orchestrator"
+  ]
 }

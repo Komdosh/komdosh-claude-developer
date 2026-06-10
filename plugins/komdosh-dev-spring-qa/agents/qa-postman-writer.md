@@ -1,6 +1,7 @@
 ---
 name: qa-postman-writer
 model: sonnet
+skills: [discover-api-surface]
 description: "Generates a Postman v2.1 collection (with pm.test assertions and chained variables) plus per-environment files from the discovered API surface. Output: docs/qa/postman/. Newman-runnable. Use when a developer needs a semi-automated HTTP smoke suite. Triggers on: 'postman collection', 'newman smoke test', 'API smoke suite', 'generate postman'."
 ---
 

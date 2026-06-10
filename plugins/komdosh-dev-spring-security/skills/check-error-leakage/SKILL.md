@@ -1,5 +1,6 @@
 ---
 name: check-error-leakage
+user-invocable: false
 description: "Audits @ExceptionHandler and WebExceptionHandler implementations for RFC 9457 hygiene. Detects raw-string responses, stack-trace leakage, SQL state from jOOQ exceptions, persistence-id exposure, missing correlation ids on 5xx, and missing catch-all Exception → 500 mapping. Read-only — surfaces findings with file:line and the rule violated."
 ---
 

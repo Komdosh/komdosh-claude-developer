@@ -1,6 +1,7 @@
 ---
 name: lifecycle-supervisor
 model: opus
+skills: [lifecycle-status]
 description: "Top-level workflow supervisor + advisor + orchestrator. Reads project state via the lifecycle-status skill, identifies which development-lifecycle gates are met / pending / N/A on the current branch, recommends the single highest-leverage next action, and (with explicit confirmation) invokes the corresponding command or agent. Use at the start of a session, before declaring work done, or when stuck on what to do next. Triggers on: 'where are we', 'what's next', 'lifecycle status', 'am I ready to ship', 'guide me through this', 'orchestrate', 'supervisor', 'next step', 'gates'."
 ---
 

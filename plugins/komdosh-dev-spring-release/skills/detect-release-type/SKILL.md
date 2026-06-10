@@ -1,5 +1,6 @@
 ---
 name: detect-release-type
+user-invocable: false
 description: "Read git log <last-tag>..HEAD, classify each commit via Conventional Commits, and recommend a major/minor/patch bump. Returns structured JSON + a one-line rationale. Read-only. Used by /version-bump and the release-coordinator."
 ---
 

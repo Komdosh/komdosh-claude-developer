@@ -1,6 +1,8 @@
 ---
 name: security-auditor
 model: opus
+disallowedTools: [Edit, MultiEdit, NotebookEdit]
+skills: [match-routes-to-filters, check-error-leakage, audit-jwt-rotation]
 description: "Defensive security auditor for Kotlin + Spring WebFlux services. Runs three Spring-specific audits in sequence: route ↔ SecurityWebFilterChain coverage matrix, RFC 9457 error-leakage check, JWT/JWK rotation hygiene. Aggregates findings into docs/security/audit-<date>.md classified BLOCKER / WARNING / INFO. Read-only — never modifies code, never extracts secrets, never bumps dependencies. Distinct from core's security-expert which WRITES filters; this AUDITS what's already there. Triggers on: 'security audit', 'is this service secure', 'check security posture', 'audit auth', 'verify problem-detail responses', 'jwt audit', 'review security config', 'are any endpoints unauthenticated'."
 ---
 

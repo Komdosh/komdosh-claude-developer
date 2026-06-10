@@ -1,5 +1,6 @@
 ---
 name: discover-avro-toolchain
+user-invocable: false
 description: "Detects which Avro code-generation plugin and which Schema Registry SDK are on the classpath of the current service. Returns a structured verdict — toolchain (davidmc24 / Confluent / avro4k / none), registry (Confluent / Apicurio / none), and recommended default if nothing is configured. Read-only. Run before any /avro-* command and from the avro-schema-author agent."
 ---
 

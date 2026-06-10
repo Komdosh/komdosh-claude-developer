@@ -1,6 +1,7 @@
 ---
 name: jira-task-coordinator
 model: opus
+skills: [discover-jira-task]
 description: "Coordinates a Jira-driven development session. Receives a ticket bundle from the discover-jira-task skill, formats it as a 'Requirement captured' memo, invokes lifecycle-supervisor in Orchestrate mode, then transitions the Jira ticket forward to the review column on a clean gate map (or asks the user otherwise). Invoked exclusively by the /jira-task command. Triggers on: (no triggers — explicit invocation only)."
 ---
 

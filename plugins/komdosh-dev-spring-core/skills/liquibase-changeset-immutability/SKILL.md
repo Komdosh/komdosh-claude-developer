@@ -1,5 +1,6 @@
 ---
 name: liquibase-changeset-immutability
+allowed-tools: Grep, Glob, Read, Bash(git log:*), Bash(git diff:*), Bash(git show:*)
 description: Verify that no previously-applied Liquibase changeset has been edited. A modified changeset fails the next deploy with a checksum mismatch — this skill catches it locally before push. Run before commit when V*.sql files are touched, and as part of /verify-service. Reads git history to determine which changesets are "applied" (committed to main).
 ---
 

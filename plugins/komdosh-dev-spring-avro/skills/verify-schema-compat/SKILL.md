@@ -1,5 +1,6 @@
 ---
 name: verify-schema-compat
+user-invocable: false
 description: "Compares a proposed Avro schema against its previous version (from git, or the live registry, or a referenced subject snapshot) and returns a structured compatibility verdict — BACKWARD / FORWARD / FULL / BREAKING — plus the changed fields and the rule each change violates. Read-only. Used by /avro-evolve and the avro-schema-author agent before any non-trivial schema change ships."
 ---
 

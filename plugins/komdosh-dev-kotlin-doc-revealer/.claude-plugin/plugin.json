@@ -1,7 +1,7 @@
 {
   "name": "komdosh-dev-kotlin-doc-revealer",
   "displayName": "Source Documentation Revealer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Smart source-documentation discovery for internal classes, project architecture, frameworks, libraries, and open-source. Adds /doc-reveal <symbol|topic|library>[#anchor] backed by the doc-revealer agent and the reveal-source-docs skill. Targets the cheapest source first — in-repo KDoc/Javadoc + /docs, then ~/.claude/docs-cache/, then MCP (context7, ref-context, codebase-memory), then canonical web URLs (docs.spring.io / javadoc.io / kotlinlang.org / GitHub README+wiki) via WebFetch with WebSearch fallback, then pre-indexed JAR listings under ~/.claude/jar-cache/listings/. JAR decompilation is the explicit last resort, only when every prior source fails. Caches resolved snippets and URL maps to avoid repeating expensive fetches. Read-only beyond the docs-cache. Requires komdosh-dev-spring-core.",
   "author": {
     "name": "Andrey Tabakov",
@@ -11,5 +11,21 @@
   "homepage": "https://github.com/komdosh/komdosh-claude-developer",
   "repository": "https://github.com/komdosh/komdosh-claude-developer",
   "license": "MIT",
-  "keywords": ["kotlin", "spring", "documentation", "kdoc", "javadoc", "context7", "ref-context", "webfetch", "library", "api-reference", "search", "cache"]
+  "keywords": [
+    "kotlin",
+    "spring",
+    "documentation",
+    "kdoc",
+    "javadoc",
+    "context7",
+    "ref-context",
+    "webfetch",
+    "library",
+    "api-reference",
+    "search",
+    "cache"
+  ],
+  "dependencies": [
+    "komdosh-dev-spring-core"
+  ]
 }

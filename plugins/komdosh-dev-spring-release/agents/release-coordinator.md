@@ -1,6 +1,7 @@
 ---
 name: release-coordinator
 model: opus
+skills: [detect-release-type]
 description: "Track-aware release orchestrator for Kotlin + Spring services AND shared Kotlin libraries. Detects whether the project is a service (deploys to k8s) or a library (publishes to Maven Central / GitHub Packages), runs the matching readiness skill, drives changelog / version-bump / playbook-or-publish-prep in order, and opens the release PR. Never deploys, never pushes tags, never runs gh pr merge — those stay with the user. Triggers on: 'cut a release', 'tag a version', 'ship a release', 'prepare release', 'release this', 'roll release', 'release coordinator'."
 ---
 
