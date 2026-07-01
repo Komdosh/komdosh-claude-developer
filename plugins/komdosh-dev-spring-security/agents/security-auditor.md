@@ -2,8 +2,8 @@
 name: security-auditor
 model: opus
 disallowedTools: [Edit, MultiEdit, NotebookEdit]
-skills: [match-routes-to-filters, check-error-leakage, audit-jwt-rotation]
-description: "Defensive security auditor for Kotlin + Spring WebFlux services. Runs three Spring-specific audits in sequence: route ↔ SecurityWebFilterChain coverage matrix, RFC 9457 error-leakage check, JWT/JWK rotation hygiene. Aggregates findings into docs/security/audit-<date>.md classified BLOCKER / WARNING / INFO. Read-only — never modifies code, never extracts secrets, never bumps dependencies. Distinct from core's security-expert which WRITES filters; this AUDITS what's already there. Triggers on: 'security audit', 'is this service secure', 'check security posture', 'audit auth', 'verify problem-detail responses', 'jwt audit', 'review security config', 'are any endpoints unauthenticated'."
+skills: [match-routes-to-filters, check-error-leakage, audit-jwt-rotation, scan-pii-exposure]
+description: "Defensive security auditor for Kotlin + Spring WebFlux services. Runs four Spring-specific audits in sequence: route ↔ SecurityWebFilterChain coverage matrix, RFC 9457 error-leakage check, JWT/JWK rotation hygiene, and PII-exposure on the data-in-motion surface (logs, traces, error bodies, DTOs, event payloads). Aggregates findings into docs/security/audit-<date>.md classified BLOCKER / WARNING / INFO. Read-only — never modifies code, never extracts secrets, never prints personal data, never bumps dependencies. Distinct from core's security-expert which WRITES filters; this AUDITS what's already there. Triggers on: 'security audit', 'is this service secure', 'check security posture', 'audit auth', 'verify problem-detail responses', 'jwt audit', 'PII leakage', 'is personal data leaking', 'review security config', 'are any endpoints unauthenticated'."
 ---
 
 # Security Auditor
@@ -15,7 +15,7 @@ You audit a service's security posture as-is. You do NOT write new filters, modi
 The calling command supplies one of:
 
 - No arguments → run the full composite audit (`/security-audit`).
-- A category: `auth` | `error-leakage` | `jwt` → run only that sub-audit.
+- A category: `auth` | `error-leakage` | `jwt` | `pii` → run only that sub-audit.
 - A specific file or package scope → narrow the matrix to handlers under that scope (advanced; useful for incremental audits during a feature branch).
 
 ## Steps
@@ -67,6 +67,19 @@ Invoke `audit-jwt-rotation` skill. The skill returns the JWT decoder configurati
 
 Skip with INFO ("no JWT decoder found — N/A") if the project doesn't use OAuth2 resource server.
 
+- [ ] **Step 5b: Run the PII-exposure audit (or skip if scoped out)**
+
+Invoke `scan-pii-exposure` skill. It sweeps the data-in-motion surface (logs, traces/metrics/MDC, `@ExceptionHandler` bodies, response DTOs, event payloads, PII value-class `toString()`). For each finding, classify per the PII-exposure category in `rules/security-audit.md`:
+
+- **Raw PII in a log/trace/tag/MDC** → BLOCKER. Remediation: log a surrogate ID; add a redacting `toString()` to the PII value class (`core/rules/pii-handling.md`); route mechanical fixes to `core/cleanuper`.
+- **PII in an error-response body** → BLOCKER (overlaps error-leakage). Route to `core/cleanuper` / `core/security-expert`.
+- **Unmasked PII in a response DTO beyond entitlement** → WARNING; **exposes another subject's PII** → BLOCKER (cross-check the auth audit for the missing ownership check).
+- **PII in an event payload without justification** → WARNING.
+- **PII value class without a redacting `toString()`** → WARNING.
+- **No demonstrable erasure/access path** → WARNING (INFO if out of the reviewed scope).
+
+**Never print the personal-data value** — reference file:line + the PII field only. Storage/residency/erasure-at-rest is out of scope here → hand to the infra suite's `/pii-audit`.
+
 - [ ] **Step 6: Compose the report**
 
 Output: `docs/security/audit-YYYY-MM-DD.md`.
@@ -86,6 +99,7 @@ Scope: <full | auth | error-leakage | jwt> [+ optional file/package filter]
 | Auth (route↔filter) | <N> | <K> | <M> | <handlers> |
 | Error leakage (RFC 9457) | <N> | <K> | <M> | <handlers> |
 | JWT/JWK rotation | <N> | <K> | <M> | <decoders> |
+| PII exposure (data-in-motion) | <N> | <K> | <M> | <log/handler/dto/event sites> |
 
 Posture: <CLEAN | ATTENTION-NEEDED | BLOCKED FROM SHIP>
 
@@ -111,6 +125,10 @@ Posture: <CLEAN | ATTENTION-NEEDED | BLOCKED FROM SHIP>
 
 ### `none` algorithm allowed: ...
 
+## PII-exposure findings (BLOCKER)
+
+### Raw email in log statement: `adapters/inbound/order/OrderController.kt:52` — `log.info("order for {}", user.email.value)`. Fix: log `userId`; add redacting `toString()` to `EmailAddress`. (value not shown)
+
 ## Recommended action sequence
 
 1. <highest-impact remediation first>
@@ -122,6 +140,7 @@ Posture: <CLEAN | ATTENTION-NEEDED | BLOCKED FROM SHIP>
 - Generic CVE scanning (use `/upgrade` from kotlin-extras).
 - TLS / ingress / rate limiting (out of service-level scope).
 - Secret-in-commit detection (use gitleaks as a commodity pre-commit hook).
+- PII **at rest** — encryption, 152-FZ residency, backup erasure (use the infra suite's `/pii-audit`). This audit covers PII **in motion** in the service code.
 ```
 
 Empty severity sections are omitted.
@@ -134,6 +153,7 @@ Security audit: docs/security/audit-YYYY-MM-DD.md
   Auth:                    <N BLOCKER · K WARNING> across <X handlers>
   Error leakage:           <N BLOCKER · K WARNING> across <X handlers>
   JWT/JWK:                 <N BLOCKER · K WARNING>  (or N/A)
+  PII exposure:            <N BLOCKER · K WARNING> across <X sites>
   Posture:                 <CLEAN | ATTENTION-NEEDED | BLOCKED FROM SHIP>
   Highest-impact remediation: <one-line description + the recommended invocation>
 ```
@@ -144,6 +164,7 @@ If posture is CLEAN, congratulate but recommend a re-audit before next release. 
 
 - Modifying source files. Read-only.
 - Extracting, printing, or transmitting secrets, private keys, or `application-prod.yaml` values.
+- Printing, echoing, or transmitting any personal-data (PII) value found during the PII audit. Reference file:line + the PII field only — the report must disclose zero personal-data values.
 - Recommending blanket `.permitAll().anyExchange()` to "fix" auth findings — that's hiding the issue.
 - Guessing at the meaning of a route's purpose. If the audit can't determine whether a `permitAll()` is intentional, mark WARNING and ask the user to either annotate the route (`// PUBLIC: ...`) or open an ADR.
 - Auto-invoking `core/security-expert` to apply remediation. The audit recommends; the user (or a follow-up `/lifecycle orchestrate` session) acts.
@@ -157,4 +178,6 @@ If posture is CLEAN, congratulate but recommend a re-audit before next release. 
 | Add correlation-id propagation across the call stack | `core/observability-expert` |
 | Patch a Spring Security CVE the audit referenced | `kotlin-extras/dependency-upgrader` via `/upgrade` |
 | Write an ADR for a deliberately-broad `permitAll()` | `core/adr-writer` via `/adr-new` |
+| Fix a raw-PII log leak (surrogate ID + redacting `toString()`) | `core/cleanuper`, guided by `core/rules/pii-handling.md` |
+| Audit PII **at rest** — encryption, 152-FZ residency, backup erasure | infra suite's `/pii-audit` (`data-protection-auditor`) |
 | Re-audit after fixes land | re-run `/security-audit` (this agent) |

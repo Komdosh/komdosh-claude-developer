@@ -32,6 +32,7 @@ $summary
 
 Mandatory preflight skills for this repo:
 - coroutine-safety-scan + module-boundary-check after editing Kotlin under domain/, application/, or adapters/
+- pii-safety-scan after editing code that logs, serializes, or exposes personal data (email/phone/address/etc.) — never log/trace/tag raw PII
 - liquibase-changeset-immutability before committing changes that touch V*.sql
 - jooq-generation-freshness after editing any V*.sql
 - run-verification (narrowest-first Gradle) before reporting any code change done"

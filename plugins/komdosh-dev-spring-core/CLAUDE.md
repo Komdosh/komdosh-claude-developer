@@ -24,8 +24,8 @@ This is a *behavioural* plugin — there is no application source code here, no 
 | `.claude-plugin/plugin.json` | Plugin manifest |
 | `agents/*.md` | 15 specialized subagents (each with `name` + `description` + trigger phrases in frontmatter) |
 | `commands/*.md` | 10 slash commands (`/add-endpoint`, `/add-migration`, `/adr-new`, `/review`, `/verify-service`, `/test-fix`, `/pr-summary`, `/service-health`, `/analyze-requirements`, `/continue-plan`) |
-| `skills/<name>/SKILL.md` | 8 skills (mandatory checklists, tracked as todos when invoked) |
-| `rules/*.md` | 10 convention documents loaded via `@rules/...` imports below |
+| `skills/<name>/SKILL.md` | 9 skills (mandatory checklists, tracked as todos when invoked) |
+| `rules/*.md` | 11 convention documents loaded via `@rules/...` imports below |
 | `hooks/` | 2 hooks (`session-context.sh` on SessionStart, `migration-register-reminder.sh` on PostToolUse) auto-installed via `hooks/hooks.json` |
 | `settings.recommended.json` | Suggested `permissions.allow`/`deny` for consumer projects to merge into `.claude/settings.json` |
 
@@ -53,6 +53,7 @@ Skills are mandatory checklists, not suggestions:
 - `check-adr-required` — REQUIRED iff (hard to reverse) ∧ (≥2 reasonable alternatives) ∧ (within service boundary).
 - `pre-edit-impact-check` — before renaming/removing a class, function, DTO field, or port-interface method, lists every direct and indirect call site with its module so the edit doesn't break N sites silently. Recommends in-place rename / deprecate-then-remove / dual-publish based on scale and reach.
 - `coroutine-safety-scan` — grep-based scan for the 12 forbidden patterns from `rules/kotlin-coroutines.md` on touched files. Runs in seconds; catches `runBlocking` / `Thread.sleep` / `@Transactional` on suspend / MDC-across-suspension before `run-verification` runs.
+- `pii-safety-scan` — grep-based scan for the personal-data violations from `rules/pii-handling.md` on touched files: raw PII interpolated into log/trace statements, PII value classes without a redacting `toString()`, PII in event payloads / DTO responses without masking, PII in span/metric tags. Runs in seconds; never prints the value. Run alongside `coroutine-safety-scan` before reporting a change done.
 - `module-boundary-check` — grep imports against the hexagonal arrows from `rules/hexagonal.md` and the banned imports from `rules/domain-purity.md`. Faster preflight than full ArchUnit; the ArchUnit suite under `tests/architecture/` remains the source of truth.
 - `liquibase-changeset-immutability` — uses git history to detect any `V*.sql` modified after first commit. Catches the next deploy's checksum-mismatch failure locally; tolerates whitespace-only and rollback-only edits.
 - `jooq-generation-freshness` — compares mtime of `*/build/generated/sources/jooq/` against the newest `V*.sql` to flag stale generated classes. Saves "method does not exist on Record" loops after a migration.
@@ -75,6 +76,7 @@ The 10 `rules/*.md` files below are loaded via `@rules/...` imports and apply to
 - **`testing.md`** — `runTest` (never `runBlocking`); fakes preferred over mocks (MockK only for unmockable third-party finals; never Mockito); `Clock.fixed` for time; Testcontainers for integration tests (real Postgres, not H2 for outbound adapters); `@WebFluxTest` + `@MockkBean` for controllers.
 - **`persistence.md`** — jOOQ DSL only (no raw SQL); idempotent Liquibase changesets `V<N>__<verb>-<thing>.sql` registered in master changelog; `TransactionalOperator.executeAndAwait` for coroutine transactions; outbox pattern for events; jOOQ `Record` types must not escape `adapters/outbound/`.
 - **`observability.md`** — Micrometer naming `<org>.<service>.<subject>.<verb>`, low-cardinality tags only; OTel vendor-neutral APIs only; **no MDC in WebFlux/coroutine paths** (ThreadLocal-unsafe across suspension); pass log context as explicit fields.
+- **`pii-handling.md`** — application-layer personal-data discipline: classify PII at the type level (value classes with a redacting `toString()`, `@Pii` markers); never log/trace/tag raw PII (log surrogate IDs); minimise, mask at the API boundary, tokenise for downstream; field-level encryption + crypto-shred for special categories; PII in events is a documented, controlled decision; build erasure/access/retention in from day one (GDPR Art. 15/17/20, 152-FZ). When the infra suite is present, storage/residency obligations live in infra-core's `rules/pii-data-protection.md`.
 
 ## When editing this plugin
 
@@ -94,5 +96,6 @@ The 10 `rules/*.md` files below are loaded via `@rules/...` imports and apply to
 @rules/testing.md
 @rules/persistence.md
 @rules/observability.md
+@rules/pii-handling.md
 
 Never put a Co-Authored into commits

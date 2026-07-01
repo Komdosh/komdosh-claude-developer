@@ -1,0 +1,18 @@
+{
+  "_comment": "Plugin-shipped hooks for komdosh-dev-infra-core. Auto-loaded by Claude Code when this plugin is installed. The script reads the hook input as JSON from stdin and emits the Claude Code JSON output protocol on stdout (hookSpecificOutput.additionalContext) — the only exit-0 channel the model actually sees. It advises, never blocks, and exits 0 in every path. Silent no-op in non-infra repos.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/infra-context.sh",
+            "timeout": 10,
+            "statusMessage": "Detecting infrastructure context"
+          }
+        ]
+      }
+    ]
+  }
+}
