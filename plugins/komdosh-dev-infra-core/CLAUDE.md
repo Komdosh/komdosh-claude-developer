@@ -8,12 +8,12 @@ This file guides Claude Code when `komdosh-dev-infra-core` is active. It loads a
 
 | Plugin | Adds |
 |---|---|
-| `komdosh-dev-infra-terraform` | Terraform/OpenTofu authoring, plan-safety analysis, state discipline |
-| `komdosh-dev-infra-kubernetes` | Hardened manifests (Pod Security Standards restricted), resource discipline, workload troubleshooting |
-| `komdosh-dev-infra-argocd` | ArgoCD Application/ApplicationSet authoring, sync/health diagnosis, GitOps delivery |
-| `komdosh-dev-infra-yandex` | Yandex Cloud provisioning (Managed K8s, Managed PG/Kafka, Lockbox, IAM), YC security/reliability audit |
+| `komdosh-dev-infra-iac` | Terraform/OpenTofu authoring, plan-safety analysis, state discipline |
+| `komdosh-dev-infra-k8s` | Hardened manifests (Pod Security Standards restricted), resource discipline, workload troubleshooting |
+| `komdosh-dev-infra-k8s` | ArgoCD Application/ApplicationSet authoring, sync/health diagnosis, GitOps delivery |
+| `komdosh-dev-infra-iac` | Yandex Cloud provisioning (Managed K8s, Managed PG/Kafka, Lockbox, IAM), YC security/reliability audit |
 
-This is a **behavioural** plugin — no application code, no build, no test suite. "Editing" it means changing its Markdown/JSON content. It composes with, but does not depend on, the Kotlin/Spring suite (`komdosh-dev-spring-core`'s `infra-expert` writes a service's own Dockerfile/manifests; this suite owns the estate they deploy into).
+This is a **behavioural** plugin — no application code, no build, no test suite. "Editing" it means changing its Markdown/JSON content. It composes with, but does not depend on, the Kotlin/Spring suite (`komdosh-dev-spring-core`'s `rules/local-dev.md` writes a service's own Dockerfile/manifests; this suite owns the estate they deploy into).
 
 ## Plugin layout
 
@@ -37,7 +37,7 @@ Every infra action obeys one contract (`rules/iac-safety.md`): **render the desi
 
 - `discover-infra-context` orients first — which tools, clouds, and environments exist — so nothing acts blind. Run **once per session**.
 - `infra-safety-scan` is the cheap gate: a grep sweep for plaintext secrets, mutable tags, world-open CIDRs, missing limits, local state, and destroy/replace hazards. Run before declaring any infra change done.
-- `infra-reviewer` is the deep read-only review of a *change*; `secrets-sentinel` is the exhaustive read-only sweep for *secrets*; `data-protection-auditor` is the read-only sweep for *personal data* across the data lifecycle (encryption, access, residency, retention, erasure — 152-FZ + GDPR). All three delegate depth to the specialist plugins rather than overreaching — the reviewer routes a Terraform state hazard to `terraform-reviewer`, a PSS violation to `k8s-hardening-auditor`, a sync failure to `argocd-diagnostician`, a managed-service blast radius to `yc-auditor`; the data-protection auditor routes residency specifics to `yc-auditor`, secret leaks to `secrets-sentinel`, and app-layer PII-in-code to the Spring suite's `/pii-leakage-check`.
+- `infra-reviewer` is the deep read-only review of a *change*; `secrets-sentinel` is the exhaustive read-only sweep for *secrets*; `data-protection-auditor` is the read-only sweep for *personal data* across the data lifecycle (encryption, access, residency, retention, erasure — 152-FZ + GDPR). All three delegate depth to the specialist plugins rather than overreaching — the reviewer routes a Terraform state hazard to `iac-reviewer`, a PSS violation to `k8s-auditor`, a sync failure to `k8s-diagnostician`, a managed-service blast radius to `iac-reviewer`; the data-protection auditor routes residency specifics to `iac-reviewer`, secret leaks to `secrets-sentinel`, and app-layer PII-in-code to the Spring suite's `/pii-leakage-check`.
 
 Read-only agents are read-only at the tool layer (`disallowedTools: Edit, Write, MultiEdit, NotebookEdit`) — they report; the specialist author agents change. The recommended permission set keeps every mutating infra command behind an explicit human decision.
 

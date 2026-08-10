@@ -92,7 +92,7 @@ If `gradle/libs.versions.toml` already exists at the repo root (multi-service re
 
 ### Convention plugin (`buildSrc/src/main/kotlin/kotlin-service.gradle.kts`)
 
-Escalate to `build-expert` if `buildSrc/` does not exist or the convention plugin needs to be authored. Do NOT inline Kotlin/Spring/detekt config in every module.
+Follow `rules/gradle-build.md` if `buildSrc/` does not exist or the convention plugin needs to be authored. Do NOT inline Kotlin/Spring/detekt config in every module.
 
 ### Module `build.gradle.kts` templates
 
@@ -212,4 +212,4 @@ If this service is a child of a multi-service umbrella:
 
 Expected: `BUILD SUCCESSFUL` (empty source sets compile cleanly).
 
-If anything in `gradle/libs.versions.toml` is missing for the dependencies above, escalate to `build-expert` — do not invent versions.
+If anything in `gradle/libs.versions.toml` is missing for the dependencies above, follow `rules/gradle-build.md` — do not invent versions.

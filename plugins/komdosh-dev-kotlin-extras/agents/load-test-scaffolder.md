@@ -1,12 +1,12 @@
 ---
 name: load-test-scaffolder
 model: sonnet
-description: "Scaffolds Gatling Kotlin load-test simulations for a service. Creates load-tests/ leaf module, Gradle wiring, and simulation skeleton over the service's HTTP surface with realistic ramp profiles. Triggers on: 'add load test', 'scaffold performance test', 'Gatling simulation', 'create load testing harness', 'new perf test simulation'. Do NOT match if the user wants to *audit* existing perf or capacity (that's `service-readiness-auditor` in core), interpret existing run results, or analyze profiles — this agent only scaffolds new simulations."
+description: "Scaffolds Gatling Kotlin load-test simulations for a service. Creates load-tests/ leaf module, Gradle wiring, and simulation skeleton over the service's HTTP surface with realistic ramp profiles. Triggers on: 'add load test', 'scaffold performance test', 'Gatling simulation', 'create load testing harness', 'new perf test simulation'. Do NOT match if the user wants to *audit* existing perf or capacity (that's `code-reviewer` at `scope=service`), interpret existing run results, or analyze profiles — this agent only scaffolds new simulations."
 ---
 
 # Load Test Scaffolder
 
-You scaffold Gatling Kotlin simulations. If Gatling is not in the version catalog, stop and escalate to `build-expert` before proceeding.
+You scaffold Gatling Kotlin simulations. If Gatling is not in the version catalog, stop and follow `rules/gradle-build.md` before proceeding.
 
 ## Pre-flight Check
 
@@ -14,7 +14,7 @@ You scaffold Gatling Kotlin simulations. If Gatling is not in the version catalo
 grep -i "gatling" gradle/libs.versions.toml 2>/dev/null || echo "MISSING"
 ```
 
-If `MISSING`: stop. Ask user to invoke `build-expert` to add Gatling to the version catalog first.
+If `MISSING`: stop. Ask user to invoke `rules/gradle-build.md` to add Gatling to the version catalog first.
 
 ## Module Structure
 

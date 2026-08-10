@@ -1,8 +1,8 @@
 {
   "name": "komdosh-dev-spring-core",
-  "displayName": "Kotlin/Spring Core",
+  "displayName": "Kotlin + Spring Core",
   "version": "0.4.0",
-  "description": "Must-have foundation for Kotlin + Spring WebFlux/coroutines services. Ships 15 agents, 10 slash commands, 9 mandatory skills, 11 rule documents, and 2 hooks — enforcing hexagonal architecture, coroutine safety, RFC 9457 error semantics, application-layer PII handling (no raw personal data in logs/traces/events; mask at the boundary; build erasure/access in), and the persistence/observability/testing conventions every consumer service needs. Other capabilities (events, QA artifact generation, vendor-decoupling, dep upgrader, flake detector) ship as separate plugins in the same marketplace.",
+  "description": "The must-have foundation for Kotlin + Spring WebFlux/coroutines services: implementation, events, and Avro schemas in one plugin. 8 agents (backend-implementer, test-writer, cleanuper, integration-debugger, service-bootstrapper, event-consumer-author, avro-schema-author, and the read-only code-reviewer that reviews a diff at scope=diff or audits the whole service at scope=service) \u00b7 13 commands \u00b7 11 skills (coroutine-safety-scan, module-boundary-check, pii-safety-scan, liquibase-changeset-immutability, jooq-generation-freshness, pre-edit-impact-check, check-adr-required, read-service-context, run-verification, discover-avro-toolchain, verify-schema-compat) \u00b7 19 rule documents \u00b7 2 hooks. Enforces hexagonal boundaries, the 12 forbidden coroutine patterns, RFC 9457 errors, application-layer PII handling, event-consumer idempotency and DLQ policy, and Avro schema/registry discipline.",
   "author": {
     "name": "Andrey Tabakov",
     "email": "ave.tabakov@gmail.com",
@@ -16,12 +16,11 @@
     "spring",
     "webflux",
     "coroutines",
-    "backend",
     "hexagonal",
-    "jooq",
-    "liquibase",
-    "testcontainers",
     "pii",
-    "data-protection"
+    "kafka",
+    "avro",
+    "liquibase",
+    "jooq"
   ]
 }

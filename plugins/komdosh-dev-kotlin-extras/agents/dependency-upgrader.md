@@ -32,7 +32,7 @@ grep -n -E '^\s*<alias>\s*=' gradle/libs.versions.toml
 grep -rn '<group>:<artifact>' --include='*.gradle.kts' --include='*.gradle' .
 ```
 
-If the library lives outside the version catalog, escalate to `build-expert` to migrate it into the catalog FIRST. This agent only mutates the catalog.
+If the library lives outside the version catalog, follow `rules/gradle-build.md` to migrate it into the catalog FIRST. This agent only mutates the catalog.
 
 - [ ] **Step 3: Determine the current version**
 
@@ -151,15 +151,15 @@ Do NOT commit yourself. Print the suggested commit; the user runs it.
 
 - Running `gradle dependencyUpdates` and applying everything. One library at a time.
 - Bulk-replacing imports across the codebase to make a major bump compile. Hand off to `backend-implementer` instead.
-- Bumping a transitive dependency by adding a new direct override. If a transitive needs pinning, escalate to `build-expert`.
+- Bumping a transitive dependency by adding a new direct override. If a transitive needs pinning, follow `rules/gradle-build.md`.
 - Adding `--no-verify` or `-x test` to verification steps to "make it green".
 
 ## Hand-Offs
 
 | Need | Agent |
 |---|---|
-| The bump requires an ADR (architectural impact) | `adr-writer` via `/adr-new` |
+| The bump requires an ADR (architectural impact) | `/adr-new` |
 | The bump requires application-code refactoring beyond compile fixes | `backend-implementer` |
-| The bump's new rule violates project conventions | `cleanuper` (style only) or `change-reviewer` (correctness) |
-| The library coordinate itself changed (renamed, split) | `build-expert` |
+| The bump's new rule violates project conventions | `cleanuper` (style only) or `code-reviewer` (correctness) |
+| The library coordinate itself changed (renamed, split) | `rules/gradle-build.md` |
 | New tests are needed to cover changed behaviour | `test-writer` |

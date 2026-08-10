@@ -8,7 +8,7 @@ description: Check whether jOOQ-generated classes (Tables, Records, Indexes, Key
 
 ## When to Use
 
-- After `migration-writer` adds or modifies a Liquibase changeset.
+- After `/add-migration` adds or modifies a Liquibase changeset.
 - Before `backend-implementer` references a jOOQ-generated type for a column or table that may have just been added/changed.
 - As part of `/verify-service` for any service using jOOQ codegen against Testcontainers Postgres.
 
@@ -25,7 +25,7 @@ jOOQ generation: <FRESH | STALE>
   Suggested:            ./gradlew :adapters:outbound:generateJooq
 ```
 
-If `STALE`, the calling agent must regenerate (or escalate to `build-expert` if the codegen is misconfigured) before referencing jOOQ types added by the recent changesets.
+If `STALE`, the calling agent must regenerate (or follow `rules/gradle-build.md` if the codegen is misconfigured) before referencing jOOQ types added by the recent changesets.
 
 ## Steps
 
@@ -44,7 +44,7 @@ done
 If no directory is found, two cases:
 
 - **Fresh clone, never built**: state `jOOQ generation: NEVER RUN — run \`./gradlew :adapters:outbound:generateJooq\` first.` and exit.
-- **Codegen disabled or misconfigured**: escalate to `build-expert` with `[BLOCKER] no jOOQ generated dir found despite jooq dependency in build.gradle.kts`.
+- **Codegen disabled or misconfigured**: follow `rules/gradle-build.md` with `[BLOCKER] no jOOQ generated dir found despite jooq dependency in build.gradle.kts`.
 
 - [ ] **Step 2: Find the newest generated file**
 

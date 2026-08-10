@@ -49,10 +49,10 @@ Score each criterion: YES / NO / PARTIAL.
 - [ ] **Step 4: Return verdict**
 
 Return exactly one of:
-- `REQUIRED` — proceed to `adr-writer` before writing code.
+- `REQUIRED` — proceed to `/adr-new` before writing code.
 - `NOT REQUIRED` — proceed directly to implementation.
-- `BORDERLINE: <one sentence rationale>` — recommend `adr-writer` but do not block.
+- `BORDERLINE: <one sentence rationale>` — recommend `/adr-new` but do not block.
 
 ## Important
 
-If `REQUIRED` or `BORDERLINE`: remind the calling agent to invoke `adr-writer` and save the ADR to `docs/adr/NNNN-<slug>.md` before beginning implementation.
+If `REQUIRED` or `BORDERLINE`: remind the calling agent to invoke `/adr-new` and save the ADR to `docs/adr/NNNN-<slug>.md` before beginning implementation.

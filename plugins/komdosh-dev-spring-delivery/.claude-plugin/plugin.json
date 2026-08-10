@@ -1,0 +1,29 @@
+{
+  "name": "komdosh-dev-spring-delivery",
+  "displayName": "Kotlin + Spring Delivery",
+  "version": "0.2.0",
+  "description": "Everything between 'a ticket exists' and 'the release PR is open'. Lifecycle orchestration (/lifecycle status|next|orchestrate|audit computes a gate map from real git state and recommends the next action; /recommend routes a task to the right marketplace capability), Jira-driven task entry (/jira-task pulls a ticket via the Atlassian MCP and walks its workflow forward), architecture-driven planning (/implementation-plan turns a service's architecture package into ordered agent todos), and two-track release engineering \u2014 service (/release-prep, /changelog, /version-bump, /release-notes, /rollback-playbook) and library (adds /abi-check, /publish-prep, /deprecate-api, with ABI-load-bearing version bumps). 4 agents \u00b7 12 commands \u00b7 11 skills \u00b7 2 rules. Never deploys, never pushes tags, never merges a PR. Requires komdosh-dev-spring-core.",
+  "author": {
+    "name": "Andrey Tabakov",
+    "email": "ave.tabakov@gmail.com",
+    "url": "https://github.com/komdosh"
+  },
+  "homepage": "https://github.com/komdosh/komdosh-claude-developer",
+  "repository": "https://github.com/komdosh/komdosh-claude-developer",
+  "license": "MIT",
+  "keywords": [
+    "release",
+    "changelog",
+    "semver",
+    "abi",
+    "publishing",
+    "lifecycle",
+    "orchestration",
+    "jira",
+    "planning",
+    "gates"
+  ],
+  "dependencies": [
+    "komdosh-dev-spring-core"
+  ]
+}

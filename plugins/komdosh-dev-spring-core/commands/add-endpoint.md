@@ -1,6 +1,6 @@
 # /add-endpoint [description]
 
-Add a new HTTP endpoint to the service. Reads existing controller conventions, optionally involves security-expert for protected routes, then invokes backend-implementer and test-writer.
+Add a new HTTP endpoint to the service. Reads existing controller conventions, optionally applies `rules/spring-security.md` for protected routes, then invokes backend-implementer and test-writer.
 
 ## Steps
 
@@ -27,8 +27,8 @@ Ask: "Does this endpoint require authentication? (y/n)"
 - [ ] **Step 4: Implement the endpoint**
 
 If protected (user said y):
-→ Invoke `security-expert` with the endpoint spec and auth requirements.
-  After security-expert defines the security config changes, invoke `backend-implementer` for the handler + service logic.
+→ Invoke `rules/spring-security.md` with the endpoint spec and auth requirements.
+  After the security config changes are defined per `rules/spring-security.md`, invoke `backend-implementer` for the handler + service logic.
 
 If unprotected (user said n):
 → Invoke `backend-implementer` with the endpoint spec.

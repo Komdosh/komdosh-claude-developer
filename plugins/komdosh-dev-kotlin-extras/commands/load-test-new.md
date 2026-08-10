@@ -11,9 +11,9 @@ grep -i "gatling" gradle/libs.versions.toml 2>/dev/null || echo "MISSING"
 ```
 
 If `MISSING`:
-"Gatling is not in the version catalog. Invoking `build-expert` to add it."
-→ Invoke `build-expert` with: "Add Gatling Kotlin/JVM (io.gatling.gradle plugin and gatling-charts-highcharts dependency) to gradle/libs.versions.toml and create the load-tests module build.gradle.kts."
-Wait for build-expert to finish, then continue.
+"Gatling is not in the version catalog. Applying `rules/gradle-build.md` to add it."
+→ Follow `rules/gradle-build.md` with: "Add Gatling Kotlin/JVM (io.gatling.gradle plugin and gatling-charts-highcharts dependency) to gradle/libs.versions.toml and create the load-tests module build.gradle.kts."
+Wait for the Gradle build rules to finish, then continue.
 
 - [ ] **Step 2: Read the service's HTTP surface**
 

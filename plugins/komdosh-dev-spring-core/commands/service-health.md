@@ -1,39 +1,39 @@
 # /service-health
 
-Run a pre-production readiness audit on the service. Invokes `service-readiness-auditor` and presents findings with remediation guidance.
+Pre-production readiness audit of the whole service, via `code-reviewer` at `scope=service`.
+
+For reviewing a change rather than the service, use `/review` (the same agent at `scope=diff`).
 
 ## Steps
 
 - [ ] **Step 1: Load service context**
 
-Run `read-service-context` skill.
+Run the `read-service-context` skill.
 
-- [ ] **Step 2: Invoke service-readiness-auditor**
+- [ ] **Step 2: Invoke `code-reviewer`**
 
-Pass the service context and ask for a full audit across all categories: Documentation, Architecture, Tests, Migrations, Coroutine Safety, Error Handling, Observability.
+Pass `scope=service` and ask for the full checklist: Documentation, QA artifacts, Architecture, Tests, Migrations, Coroutine Safety, Error Handling, Observability.
 
 - [ ] **Step 3: Present findings**
 
-Group findings by category. Within each category, order by severity: BLOCKERs first, then WARNINGs, then INFOs.
+Grouped by category, ordered by severity within each:
 
-For each BLOCKER:
 ```
 BLOCKER [CATEGORY]: <description>
-→ Fix with: <agent-name>
+→ Fix with: <command or agent>
+
+WARNING [CATEGORY]: <description>
+→ Fix with: <command or agent>
 ```
 
-For each WARNING:
-```
-WARNING [CATEGORY]: <description>
-→ Fix with: <agent-name>
-```
+QA-artifact findings are WARNING at most — they are tooling outputs, not production requirements.
 
 - [ ] **Step 4: Conclude**
 
-State: "Service readiness: **READY** / **NOT READY** (N blockers, M warnings)"
+State: "Service readiness: **READY** / **NOT READY** (N blockers, M warnings)", with the agent's stated evidence for the categories it called clean.
 
-- [ ] **Step 5: Offer to fix blockers**
+- [ ] **Step 5: Offer to fix the blockers**
 
-If blockers exist: "Want me to work through the blockers? I'll tackle them one at a time, verify after each, and ask before continuing."
+If blockers exist: "Want me to work through the blockers? I'll take them one at a time, verify after each, and check with you before continuing."
 
-If user says yes: invoke the remediation agent for the first BLOCKER, run `run-verification` skill, then confirm before moving to the next.
+If the user agrees: remediate the first BLOCKER, run the `run-verification` skill, confirm, then move to the next.

@@ -28,6 +28,21 @@ class OrderService(
 }
 ```
 
+### Timing a `suspend fun`
+
+Micrometer's `Timer` ships no `suspend`-aware `record` overload, and `Timer.recordCallable` expects a synchronous `Callable<T>` — calling it from a `suspend fun` blocks the dispatcher. Time manually, or define the extension once in `application/observability/`:
+
+```kotlin
+suspend inline fun <T> Timer.recordSuspending(crossinline block: suspend () -> T): T {
+    val start = System.nanoTime()
+    try {
+        return block()
+    } finally {
+        record(System.nanoTime() - start, TimeUnit.NANOSECONDS)
+    }
+}
+```
+
 ## Tracing (OTel)
 
 - Use OpenTelemetry vendor-neutral APIs only — no Zipkin, Jaeger, or Datadog-specific imports.

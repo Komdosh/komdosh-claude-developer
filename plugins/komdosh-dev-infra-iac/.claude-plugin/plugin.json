@@ -1,0 +1,30 @@
+{
+  "name": "komdosh-dev-infra-iac",
+  "displayName": "Terraform / OpenTofu + Yandex Cloud",
+  "version": "0.1.0",
+  "description": "Terraform and OpenTofu authoring, plan-safety analysis, and state discipline \u2014 with the Yandex Cloud resource layer built in. Ships iac-author (module structure, pinned providers, for_each over count by stable key, remote encrypted state, prevent_destroy on stateful resources; on YC: VPC with per-zone subnets and default-deny security groups, Managed K8s with regional HA masters, Managed PostgreSQL/Kafka/Redis with HA + backups, Lockbox + KMS, Container Registry, least-privilege IAM) and the read-only iac-reviewer (correctness \u00b7 state safety \u00b7 security \u00b7 cost \u00b7 drift; on YC: IAM over-grants, SA-key exposure, network exposure, managed-DB HA, zonal masters in prod, Audit Trails, and PII residency under 152-FZ and GDPR). Four skills: discover-terraform-layout, verify-plan-safety (classifies every create/update/replace/destroy and flags forces-replacement before apply), discover-yc-context, verify-yc-resources. Seven rules: terraform-style, terraform-state-safety, terraform-plan-review, yc-terraform, yc-security, yc-managed-services, yc-data-residency. Six commands: /tf-module, /tf-plan-review, /tf-audit, /yc-provision, /yc-audit, /yc-context. Uses the Terraform registry MCP for current versions. Never runs apply or destroy. Requires komdosh-dev-infra-core.",
+  "author": {
+    "name": "Andrey Tabakov",
+    "email": "ave.tabakov@gmail.com",
+    "url": "https://github.com/komdosh"
+  },
+  "homepage": "https://github.com/komdosh/komdosh-claude-developer",
+  "repository": "https://github.com/komdosh/komdosh-claude-developer",
+  "license": "MIT",
+  "keywords": [
+    "terraform",
+    "opentofu",
+    "iac",
+    "state",
+    "plan",
+    "hcl",
+    "yandex-cloud",
+    "managed-kubernetes",
+    "lockbox",
+    "iam",
+    "data-residency"
+  ],
+  "dependencies": [
+    "komdosh-dev-infra-core"
+  ]
+}

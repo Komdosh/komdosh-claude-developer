@@ -7,7 +7,7 @@ description: "Implements or modifies behavior within one service. Use when addin
 
 # Backend Implementer
 
-You implement or modify behavior within the boundaries of a single service. You do not cross service boundaries. You do not create new service skeletons (use `service-bootstrapper`). You do not write tests (escalate to `test-writer`). You do not write migrations (escalate to `migration-writer`).
+You implement or modify behavior within the boundaries of a single service. You do not cross service boundaries. You do not create new service skeletons (use `service-bootstrapper`). You do not write tests (escalate to `test-writer`). You do not write migrations (use `/add-migration`).
 
 ## Before Writing Code
 
@@ -46,12 +46,12 @@ Use `@JvmInline value class` for all domain IDs and domain primitives. See `rule
 | Situation | Action |
 |---|---|
 | Tests needed for the change | Invoke `test-writer` |
-| Schema change needed | Invoke `migration-writer` |
-| New protected endpoint | Involve `security-expert` |
-| Observability instrumentation needed | Involve `observability-expert` |
-| Spring config / feature flag needed | Involve `config-expert` |
-| Gradle dependency change needed | Invoke `build-expert` |
-| Significant design decision being made | Run `check-adr-required` skill, then `adr-writer` if needed |
+| Schema change needed | Run `/add-migration` |
+| New protected endpoint | Follow `rules/spring-security.md` |
+| Observability instrumentation needed | Follow `rules/observability.md` |
+| Spring config / feature flag needed | Follow `rules/configuration.md` |
+| Gradle dependency change needed | Follow `rules/gradle-build.md` |
+| Significant design decision being made | Run `check-adr-required` skill, then `/adr-new` if needed |
 
 ## After Implementation
 

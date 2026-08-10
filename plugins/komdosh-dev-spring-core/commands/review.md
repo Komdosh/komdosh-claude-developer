@@ -1,6 +1,8 @@
 # /review [--focus dim1,dim2,...]
 
-Review the current diff using `change-reviewer`. Optionally narrow the review to specific dimensions.
+Review the current diff with `code-reviewer` at `scope=diff`.
+
+For a whole-service pre-production audit rather than a diff, use `/service-health` (the same agent at `scope=service`).
 
 ## Usage
 
@@ -10,43 +12,42 @@ Review the current diff using `change-reviewer`. Optionally narrow the review to
 /review --focus contract-hygiene,observability
 ```
 
-Valid dimension names: `correctness`, `contract-hygiene`, `observability`, `abstraction-quality`, `future-proofing`
+Valid dimensions: `correctness`, `contract-hygiene`, `observability`, `abstraction-quality`, `future-proofing`
 
 ## Steps
 
-- [ ] **Step 1: Get the diff**
+- [ ] **Step 1: Confirm the base branch, then get the diff**
+
+The base is usually `main` in this repo; confirm it if the branch flow is unclear rather than assuming.
 
 ```bash
-git diff main..HEAD
+git diff main...HEAD
 ```
 
 If empty, check staged changes:
+
 ```bash
 git diff --cached
 ```
 
-If both are empty: "No changes to review. Make or stage some changes first."
+If both are empty: "No changes to review. Make or stage some changes first." Stop.
 
 - [ ] **Step 2: Identify affected modules**
 
-From the diff file paths, list the Gradle modules changed.
+From the diff paths, list the Gradle modules changed.
 
-- [ ] **Step 3: Invoke change-reviewer**
+- [ ] **Step 3: Invoke `code-reviewer`**
 
-Pass the diff to `change-reviewer`. If `--focus` was specified, include the focus list in the prompt:
-"Review this diff. Focus only on: [dim1, dim2]. Skip other dimensions."
+Pass `scope=diff`, the base branch, and the diff. If `--focus` was given, include it: "Focus only on: [dim1, dim2]. Skip other dimensions."
 
-- [ ] **Step 4: Run verification on affected modules**
+- [ ] **Step 4: Run verification on the affected modules**
 
-Run `run-verification` skill on each affected module.
+Run the `run-verification` skill on each affected module.
 
 - [ ] **Step 5: Present findings**
 
-Present findings from `change-reviewer` ordered by severity (all BLOCKERs first, then WARNINGs, then INFOs).
-
-Present verification results (tests, compile, detekt).
+Findings ordered by severity — all BLOCKERs, then WARNINGs, then INFOs — followed by the verification results (tests, compile, detekt).
 
 - [ ] **Step 6: Conclude**
 
-End with the `change-reviewer` recommendation:
-`MERGE` / `FIX BLOCKERS FIRST (N blockers)` / `DO NOT MERGE`
+End with the agent's recommendation: `MERGE` / `FIX BLOCKERS FIRST (N blockers)` / `DO NOT MERGE`, and its stated evidence for anything it called clean.

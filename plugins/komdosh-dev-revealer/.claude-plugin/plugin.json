@@ -1,0 +1,27 @@
+{
+  "name": "komdosh-dev-revealer",
+  "displayName": "Revealer",
+  "version": "0.3.0",
+  "description": "Retrieval before invention \u2014 two ladders, one discipline: answer from a real source, cite it, and name the gaps instead of filling them. /reveal <query> surfaces accumulated project knowledge (ADRs, specs, plans, code-embedded DECISION/RATIONALE comments, commit archaeology, and any RAG/MCP knowledge base wired up \u2014 codebase-memory, Confluence/Notion/Linear, context7, ref-context) in survey / decision-trace / gap-find modes. /doc-reveal <symbol|topic|library> resolves source documentation cheapest-first (in-repo KDoc/Javadoc \u2192 project docs \u2192 local cache \u2192 MCP \u2192 canonical web docs \u2192 pre-indexed JAR listings \u2192 decompilation as a last resort), caching results so repeats are instant. 2 agents \u00b7 2 commands \u00b7 2 skills \u00b7 1 rule. Read-only on project source; degrades gracefully when no MCP is configured.",
+  "author": {
+    "name": "Andrey Tabakov",
+    "email": "ave.tabakov@gmail.com",
+    "url": "https://github.com/komdosh"
+  },
+  "homepage": "https://github.com/komdosh/komdosh-claude-developer",
+  "repository": "https://github.com/komdosh/komdosh-claude-developer",
+  "license": "MIT",
+  "keywords": [
+    "adr",
+    "rag",
+    "knowledge-retrieval",
+    "decisions",
+    "documentation",
+    "kdoc",
+    "javadoc",
+    "context7"
+  ],
+  "dependencies": [
+    "komdosh-dev-spring-core"
+  ]
+}
