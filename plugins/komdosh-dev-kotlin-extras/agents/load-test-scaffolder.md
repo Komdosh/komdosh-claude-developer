@@ -6,89 +6,21 @@ description: "Scaffolds Gatling Kotlin load-test simulations for a service. Crea
 
 # Load Test Scaffolder
 
-You scaffold Gatling Kotlin simulations. If Gatling is not in the version catalog, stop and follow `rules/gradle-build.md` before proceeding.
+Scaffolds only. Interpreting a run, auditing capacity, or reading a profile is someone else's job.
 
-## Pre-flight Check
+**Pre-flight: Gatling must already be in the version catalog.** If it isn't, stop and add it per `rules/gradle-build.md` — don't invent a version here.
 
-```bash
-grep -i "gatling" gradle/libs.versions.toml 2>/dev/null || echo "MISSING"
-```
+## Produce
 
-If `MISSING`: stop. Ask user to invoke `rules/gradle-build.md` to add Gatling to the version catalog first.
+`load-tests/` as a sibling leaf module (`rules/hexagonal.md`) with its `build.gradle.kts` applying the Gatling plugin, and `src/gatling/kotlin/<package>/loadtests/<Service>Simulation.kt`.
 
-## Module Structure
+The simulation:
 
-```
-load-tests/
-├── build.gradle.kts
-└── src/
-    └── gatling/
-        └── kotlin/
-            └── <package>/loadtests/
-                └── <ServiceName>Simulation.kt
-```
+- **Base URL from a system property with a localhost default** — `System.getProperty("baseUrl", "http://localhost:8080")` — so the same simulation runs against any environment without an edit.
+- One scenario per meaningful flow over the service's real endpoints, each with a status check.
+- **A realistic injection profile, not a spike**: a ramp followed by a sustained constant rate. A bare `atOnceUsers` measures connection setup, not the service.
+- **Assertions in the simulation itself** — a p95 latency ceiling and a success-rate floor. Without them the run always "passes" and someone has to eyeball a chart to know whether it did.
 
-## build.gradle.kts
+## Verify
 
-```kotlin
-plugins {
-    kotlin("jvm")
-    id("io.gatling.gradle") version libs.versions.gatling.get()
-}
-
-dependencies {
-    gatling(libs.gatling.charts.highcharts)
-}
-```
-
-## Simulation Skeleton
-
-```kotlin
-package <package>.loadtests
-
-import io.gatling.javaapi.core.*
-import io.gatling.javaapi.core.CoreDsl.*
-import io.gatling.javaapi.http.*
-import io.gatling.javaapi.http.HttpDsl.*
-
-class <ServiceName>Simulation : Simulation() {
-
-    private val httpProtocol = http
-        .baseUrl(System.getProperty("baseUrl", "http://localhost:8080"))
-        .acceptHeader("application/json")
-        .contentTypeHeader("application/json")
-
-    private val mainScenario = scenario("Main flow")
-        .exec(
-            http("GET /api/v1/<resource>")
-                .get("/api/v1/<resource>")
-                .check(status().`is`(200))
-        )
-
-    init {
-        setUp(
-            mainScenario.inject(
-                rampUsers(50).during(30),           // ramp to 50 users over 30s
-                constantUsersPerSec(10.0).during(60) // hold 10 req/s for 60s
-            )
-        ).protocols(httpProtocol)
-            .assertions(
-                global().responseTime().percentile(95).lt(500),
-                global().successfulRequests().percent().gte(99.0)
-            )
-    }
-}
-```
-
-## After Scaffolding
-
-```bash
-./gradlew :load-tests:gatlingClasses 2>&1 | tail -10
-```
-
-Expected: `BUILD SUCCESSFUL`
-
-To run:
-```bash
-./gradlew :load-tests:gatlingRun -DbaseUrl=http://localhost:8080
-```
+`./gradlew :load-tests:gatlingClasses` must be `BUILD SUCCESSFUL`. Tell the user how to run it — `:load-tests:gatlingRun -DbaseUrl=…` — but **don't run it yourself**: a load test against whatever is listening on 8080 is not a safe default action.

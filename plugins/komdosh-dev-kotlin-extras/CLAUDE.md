@@ -1,15 +1,7 @@
-# CLAUDE.md — komdosh-dev-kotlin-extras
+# komdosh-dev-kotlin-extras
 
-Niche tooling on top of `komdosh-dev-spring-core`. Install only if you actually need one of these.
+Niche tooling on top of `komdosh-dev-spring-core`. Install only if you need one of these.
 
-## What it adds
+`/upgrade` bumps **one** library at a time · `/detect-flakes` classifies non-deterministic tests with evidence · `/load-test-new` scaffolds Gatling simulations.
 
-| Command | Agent | What it does |
-|---|---|---|
-| [`/upgrade <lib>`](commands/upgrade.md) | [`dependency-upgrader`](agents/dependency-upgrader.md) | Bumps **one** library at a time in `gradle/libs.versions.toml`. Reads upstream changelog, lists breaking changes with affected file globs, runs verification, iterates on compile fixes (capped at 5). Major bumps require user confirmation. |
-| [`/detect-flakes`](commands/detect-flakes.md) | [`flaky-test-detector`](agents/flaky-test-detector.md) | Re-runs a test class (or last-failed) N times with `--rerun-tasks --no-daemon`, parses JUnit XML, classifies each method as DETERMINISTIC PASS / DETERMINISTIC FAIL / FLAKY, appends to `docs/flakes.md`. Surfaces evidence; does not fix — routes to the right specialist. |
-| [`/load-test-new`](commands/load-test-new.md) | [`load-test-scaffolder`](agents/load-test-scaffolder.md) | Scaffolds Gatling simulations in the `load-tests/` module. |
-
-## Dependencies
-
-Requires `komdosh-dev-spring-core`. The dependency-upgrader hands off to `backend-implementer` (core) when a bump requires application-code refactoring beyond compile fixes; flaky-test-detector hands off to `test-writer` (core) for coroutine-timing flakes and to `integration-debugger` (core) for container-readiness flakes.
+None of them finishes the job alone: the upgrader hands application-code refactoring to `backend-implementer`, and the flake detector hands coroutine-timing flakes to `test-writer` and container-readiness flakes to `integration-debugger`. **They surface and classify; the specialists fix.**

@@ -7,7 +7,7 @@ description: Fast read-only security-reliability-and-data-protection check of Ya
 
 # Verify Yandex Cloud Resources
 
-A quick grep-and-read pass over YC Terraform for the highest-signal security and reliability defects, before the deeper `iac-reviewer` review or an apply. Follows `rules/yc-security.md` and `rules/yc-managed-services.md`. Read-only. Track as a todo when invoked.
+A quick grep-and-read pass over YC Terraform for the highest-signal security and reliability defects, before the deeper `iac-reviewer` review or an apply. Follows `rules/yc-security.md` and `rules/yc-managed-services.md`. Read-only.
 
 Scope to the diff (`git diff <base>...HEAD`) for a change, or the tree for an audit.
 

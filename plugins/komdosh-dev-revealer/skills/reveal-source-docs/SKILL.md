@@ -6,319 +6,54 @@ description: Walks a fixed source-documentation ladder from cheapest to most exp
 
 # Reveal Source Docs
 
-## When to Use
+Finds documentation for a symbol, library, framework, or pattern — the *meaning* of code, not the project's decision history. Read-only on project source; writes only under `~/.claude/docs-cache/`.
 
-Run this skill whenever an agent needs to find **documentation about a symbol, library, framework, or architectural pattern** — i.e. the meaning / API / usage of code, not the project's decision history. Examples:
+Inputs: `query` · `kind` (`auto|internal|library|architecture`) · `depth` (`summary|full`) · `no_web` · `no_cache` (skip cache *reads*, still write) · `refresh` (force re-fetch) · `max_snippets`.
 
-- "What does `OrderRepository.fetchPending` do?" — internal KDoc.
-- "What's the signature of `Mono.transform`?" — library doc.
-- "How does `WebFilter` ordering work in Spring 7?" — framework reference.
-- "What's the architecture of the `orders` module?" — project `/docs/`.
-- "Where does `org.jooq.DSLContext` live?" — pre-indexed JAR listing.
+Returns JSON: `query`, `classified_kind`, `winning_source`, `cache_status`, `cache_path`, `snippets[]` (each with lang, anchor, body, `source_ref`), `provenance[]` (step, label, ref, `fetched_at`), `related[]`, `gaps[]`. **Every step miss returns `winning_source: null` with `gaps` naming what was tried** — never an unsourced answer.
 
-Read-only on project source; only writes under `~/.claude/docs-cache/`.
+## Walking the ladder
 
-## Inputs
+Run in order and stop at the first **confident hit** — a snippet that answers the question, not merely proof the symbol exists. At `summary`, one solid signature plus a line or two of prose; at `full`, accumulate until the anchor is covered.
 
-- `query` (required) — symbol, topic, library name, or `library#anchor`.
-- `kind` (optional, default `auto`) — `auto | internal | library | architecture`.
-- `depth` (optional, default `summary`) — `summary | full`.
-- `no_web` (optional, default false) — stop the ladder at step 6 (no WebFetch / WebSearch).
-- `no_cache` (optional, default false) — bypass cache *read*; still write fresh entries.
-- `refresh` (optional, default false) — force re-fetch and overwrite the cache entry.
-- `max_snippets` (optional, default 3 at `summary`, 8 at `full`) — cap the snippets in the output.
+`kind` fast-forwards the *entry* step (`internal`→1, `architecture`→2, `library`→3); every later step still runs in order on a miss.
 
-## Output
+**Step 0 — classify** (only when `kind=auto`): a fully-qualified name under the service's base package → `internal`; wording about architecture/modules/boundaries → `architecture`; a known library name → `library`; default `library`.
 
-A JSON descriptor (the calling agent reads this; the agent does the human-facing rendering):
+**1. In-repo KDoc/Javadoc.** Locate the declaration (IDE index when available, else grep) and read the `/** */` above it. **A one-line or empty KDoc is a gap, not a hit** — record it and continue. Multi-word topics usually miss here; that's expected.
 
-```json
-{
-  "query": "Mono.transform",
-  "classified_kind": "library",
-  "winning_source": "mcp:context7",
-  "cache_status": "miss-write",
-  "cache_path": "~/.claude/docs-cache/reactor/3.8.4/Mono.transform.md",
-  "snippets": [
-    {
-      "lang": "kotlin",
-      "anchor": "Mono.transform",
-      "body": "fun <V> transform(transformer: Function<in Mono<T>, out Publisher<V>>): Mono<V>",
-      "source_ref": "context7://reactor/3.8.4#Mono.transform"
-    }
-  ],
-  "provenance": [
-    {
-      "step": 5,
-      "label": "mcp:context7",
-      "ref": "library-id=/reactor/reactor-core?v=3.8.4 query=\"Mono transform operator\"",
-      "fetched_at": "2026-05-04T10:21:00Z"
-    }
-  ],
-  "related": ["Mono.flatMap", "Mono.transformDeferred", "Flux.transform"],
-  "gaps": [
-    "context7 returned the 3.8.x family doc; verify it matches the project's pinned reactor version."
-  ]
-}
-```
+**2. Project `/docs/`.** Architectural docs and READMEs. Hit = a heading or paragraph on the query; capture file, heading, and a short excerpt.
 
-If every step misses, return `winning_source: null` and populate `gaps` with what was tried + what the developer can do.
+**3. `~/.claude/docs-cache/`.** Key on `(library, version, query)` — derive the library from the symbol prefix (`Mono.transform` → reactor, `flowOn` → kotlinx-coroutines) and the version from the project's pinned catalog. Internal entries key on the qualified name and **invalidate on the file's git mtime**. TTL 30 days for libraries, manual for internal. A non-stale hit ends the ladder; `refresh` treats every hit as a miss.
 
-## The ladder (run in order, stop at the first confident hit)
+**4. `codebase-memory` MCP.** Check `index_status` first. `search_graph` → `get_code_snippet` for internal symbols; `get_architecture` for structure. Hit = the snippet carries a doc comment, or the requested architectural aspect.
 
-The skill **walks the ladder in order**. A "confident hit" means: a snippet that actually answers the developer's query, not just "the symbol exists". For `summary` depth, one solid signature + 1–2 lines of explanatory prose is enough. For `full`, accumulate snippets until you've covered the requested anchor or the source is exhausted.
+**5. `context7` MCP — two calls, never skip the resolve.** `resolve-library-id` with the library name *and* the user's full question, preferring a match whose version segment matches the project's pin; then `query-docs` with the resolved id and **the full question**. A single keyword returns shallow page lists; the whole question gives the server enough signal to extract the right section. Record the resolved id and the doc's version in provenance.
 
-If `kind` is set, you may **fast-forward the entry point** to the appropriate step — but every step after the entry still runs in order on miss.
+**6. `ref-context` MCP.** `ref_search_documentation`, then `ref_read_url` on a clear result. The general fallback when context7 has no entry.
 
-| `kind` | Entry step |
+**7. WebFetch on canonical URLs** (skipped when `no_web`). Build at most three candidates using the project's **pinned version**:
+
+| | |
 |---|---|
-| `internal` | 1 |
-| `architecture` | 2 |
-| `library` | 3 |
-| `auto` | classify (see Step 0), then map |
+| Spring Framework / Boot / Security | `docs.spring.io/<project>/…/reference/<topic>.html`, or the versioned `javadoc-api` path |
+| Reactor | `projectreactor.io/docs/core/<v>/api/…` |
+| Kotlin / kotlinx | `kotlinlang.org/api/…` |
+| Any Maven artifact | `javadoc.io/doc/<group>/<artifact>/<v>/…` |
+| OSS on GitHub | the raw README, or the wiki page |
 
-### Step 0 — Classify (only if `kind=auto`)
+Hit = the fetched body contains the declaration or a topical section answering the query.
 
-- If `query` looks like a fully-qualified name and starts with the service's base package (read from `read-service-context`) → `internal`.
-- Else if it contains "architecture", "module", "package", "boundary", "pattern in this codebase" → `architecture`.
-- Else if it matches a known library name or coordinate (Spring / Reactor / kotlinx.coroutines / jOOQ / Liquibase / Micrometer / OTel / Jackson / kotlinx.serialization / Spring Security / Spring Boot / R2DBC / etc.) → `library`.
-- Default → `library`.
+**8. WebSearch fallback.** Take the top result **only from a known docs host** (`docs.*.org`, `*.io/doc`, `*.github.io`, `readthedocs`, `kotlinlang.org`, `javadoc.io`, `projectreactor.io`), then WebFetch it. **A Stack Overflow answer or a blog post is not a source doc — drop to step 9 instead of using one.**
 
-Record the classification in `classified_kind`.
+**9. Pre-indexed JAR listings** (`rules/jar-inspection.md`). Probe `~/.claude/jar-cache/listings/` first; empty or absent → record the gap and **skip 9 and 10 entirely**. `grep '<ClassName>' …/listings/*.txt` locates the jar and entry path. Never `jar tf` an indexed jar.
 
-### Step 1 — In-repo KDoc / Javadoc
+For **"where does this class live"** this is a terminal answer — stop. For "what does it do" it is only a signal.
 
-```bash
-# locate the file containing the symbol
-grep -rn --include='*.kt' --include='*.java' "\b<symbol>\b" .
-# read the /** ... */ block immediately above the declaration
-```
+**10. Decompilation — edge case only.** Requires all of: steps 1–8 missed, the question is about API meaning rather than packaging, and the jar cache exists. Extract to the shared `/tmp/jar-scratch/<jar>/`, capture the class and public method signatures, mark `source_ref` as `jar-decompile:…`, and **always add the gap: "no published doc — bytecode-derived, treat with care."**
 
-For multi-word topics (e.g. "WebFilter ordering"), this step usually misses — that's expected. Move on.
+## Cache write
 
-For internal qualified names, prefer the IDE index when available (`mcp__intellij-index__ide_find_class` then read the file around the line); fall back to grep.
+After a confident hit at any step **other than 3**, write `~/.claude/docs-cache/<library>/<version>/<slug>.md` (internal and architecture go under `internal/`) with frontmatter carrying `source`, `fetched_at`, `ttl_days` (30 libraries · 7 web-search-derived · 0 internal), `query`, `library`, `version`, and `provenance`; then a short summary, the verbatim signatures, related symbols, and any caveats.
 
-Confident hit if a `/** ... */` block of ≥3 lines is attached to the symbol declaration. Empty / one-line KDoc → record as a gap and continue down the ladder.
-
-### Step 2 — Project `/docs/`
-
-```bash
-# search architectural docs (excluding the dirs scanned by the knowledge-revealer)
-grep -rilE '<query-keywords>' docs/architecture* docs/<module>* README.md \
-  packages/*/package-info.kt 2>/dev/null
-```
-
-Confident hit if the doc has a heading or paragraph about the query. Capture file + heading + 5-10 line excerpt.
-
-### Step 3 — `~/.claude/docs-cache/`
-
-Read `~/.claude/docs-cache/index.json`. Look up `(library, version, query)`:
-
-- For `library` queries, derive `library` from the symbol prefix or context (`Mono.transform` → `reactor`; `flowOn` → `kotlinx-coroutines`; `WebFilter` + Spring → `spring-framework`). Derive `version` from the project's `gradle/libs.versions.toml` or `pom.xml`.
-- For `internal` queries, the cache key is the qualified name; invalidate on file mtime change (compare cached `fetched_at` with `git log -1 --format=%ct -- <file>`).
-
-Honour TTL (default 30 days for libraries; 0 / manual-invalidate for internal). On `--refresh`, treat all hits as misses.
-
-Confident hit = a non-stale cache entry exists. Read it and use as the snippet source. `cache_status = "hit"`. Skip the rest of the ladder.
-
-If `no_cache=true`, skip the **read** but still allow downstream steps to write a fresh entry.
-
-### Step 4 — MCP `mcp__codebase-memory-mcp__*`
-
-Probe `mcp__codebase-memory-mcp__index_status`. If indexed:
-
-- For internal symbols: `mcp__codebase-memory-mcp__search_graph` with `name_pattern=<symbol>` to find the qualified name; then `mcp__codebase-memory-mcp__get_code_snippet` to read the source + nearby doc comment.
-- For architecture queries: `mcp__codebase-memory-mcp__get_architecture` to retrieve the project structure.
-
-Confident hit = the snippet contains a doc comment **or** the architecture aspect requested.
-
-### Step 5 — MCP `mcp__context7__*`
-
-Two-call protocol — never skip the resolve step:
-
-1. `mcp__context7__resolve-library-id` with the library name + the user's full question. Pick the best match (exact name, code snippet count, version match — prefer one whose version segment matches the project's pinned version).
-2. `mcp__context7__query-docs` with the resolved id and the **full** question (not single keywords). Single-keyword queries return shallow page lists; the full question gives the server enough signal to extract the right section.
-
-Best for libraries with public reference docs (Spring, Reactor, kotlinx.coroutines, kotlinx.serialization, jOOQ, Micrometer, OTel, Jackson, ...).
-
-Confident hit = at least one returned doc snippet that names the symbol or directly answers the topic. Record the resolved library-id and the version the doc applies to in provenance.
-
-### Step 6 — MCP `mcp__ref-context__*`
-
-`mcp__ref-context__ref_search_documentation` with the query. If a result has a clear URL, optionally `mcp__ref-context__ref_read_url` to fetch the page body.
-
-Use as the next-best general docs search when context7 has no entry.
-
-### Step 7 — WebFetch on canonical URLs
-
-If `no_web=true`, skip to step 9.
-
-Build candidate URLs from the library and the symbol. The agent must already know the project's pinned version (from `libs.versions.toml`) — use it in the URL.
-
-| Library / framework | URL template |
-|---|---|
-| Spring Framework | `https://docs.spring.io/spring-framework/reference/<topic>.html` and `https://docs.spring.io/spring-framework/docs/<v>/javadoc-api/<class-path>.html` |
-| Spring Boot | `https://docs.spring.io/spring-boot/<v>/reference/<topic>.html` |
-| Spring Security | `https://docs.spring.io/spring-security/reference/<v>/<topic>.html` |
-| Reactor | `https://projectreactor.io/docs/core/<v>/api/reactor/core/publisher/<class>.html` and `https://projectreactor.io/docs/core/<v>/reference/index.html` |
-| Kotlin / kotlinx | `https://kotlinlang.org/api/kotlinx.coroutines/<package>/<symbol>.html` and `https://kotlinlang.org/api/core/<package>/<symbol>.html` |
-| Generic Maven artefact | `https://javadoc.io/doc/<group>/<artifact>/<v>/<class-path>.html` (and `/index.html` for the package list) |
-| Open source on GitHub | `https://github.com/<org>/<repo>#readme`, `https://github.com/<org>/<repo>/wiki/<page>`, `https://raw.githubusercontent.com/<org>/<repo>/<ref>/README.md` |
-
-Try at most 3 candidate URLs in priority order. WebFetch each; if the body contains the symbol or a section heading matching the query, it's a hit.
-
-Confident hit = the fetched HTML contains the symbol declaration or a topical section that answers the query.
-
-### Step 8 — WebSearch fallback
-
-`WebSearch` for `<query> <library> documentation`. Pick the top result that is a known docs host (`docs.*.org`, `*.io/doc`, `*.github.io`, `*.readthedocs.io`, `kotlinlang.org`, `javadoc.io`, `projectreactor.io`, `docs.spring.io`, repository wikis). WebFetch the URL.
-
-Confident hit = same criteria as step 7.
-
-If the only matching result is a Stack Overflow or blog post, do NOT use it — those are not source docs. Drop to step 9.
-
-### Step 9 — Pre-indexed JAR listings
-
-Per the plugin-shipped `rules/jar-inspection.md` (loaded into every session via this plugin's CLAUDE.md). The cache directory `~/.claude/jar-cache/listings/` is opt-in — populate it once for the JARs you touch repeatedly; the skill works fine when it's empty.
-
-First, **probe**:
-
-```bash
-[ -d ~/.claude/jar-cache/listings ] && ls ~/.claude/jar-cache/listings/*.txt 2>/dev/null | head -1
-```
-
-If the directory does not exist, contains no listings, or the helper script is absent, **skip steps 9 and 10 entirely** — record `gap: "no JAR listings configured at ~/.claude/jar-cache/listings/; steps 9–10 skipped"` and return.
-
-If listings are present:
-
-```bash
-grep '<ClassName>' ~/.claude/jar-cache/listings/*.txt            # find the JAR + entry path
-[ -x ~/.claude/jar-cache/jar-inspect.sh ] && \
-  ~/.claude/jar-cache/jar-inspect.sh <ClassName>                 # locate the JAR (only if the helper exists)
-```
-
-Never run `jar tf` on a pre-indexed JAR — use the listing. See `rules/jar-inspection.md` for how to add a new listing when a library version bumps.
-
-For "where does this class live?" queries, this is often a **terminal answer** (it's a question about packaging, not API meaning). Stop here for those.
-
-For "what does it do?" queries, this is a *signal* (the class exists, here's its location), not an answer — continue to step 10 only if the developer truly needs the API and no doc source had it.
-
-### Step 10 — JAR decompilation (edge case only)
-
-Run *only* if:
-- Steps 1–8 returned no confident hit, AND
-- The developer's query is about API meaning / signature (not packaging), AND
-- The JAR cache and `jar-inspect.sh` helper described in this plugin's `rules/jar-inspection.md` exist (otherwise skip with a gap, as in step 9).
-
-```bash
-~/.claude/jar-cache/jar-inspect.sh <ClassName> --decompile
-```
-
-Extract to `/tmp/jar-scratch/<jar-name>/` (per the global rule — reuse, don't pick a new temp dir each time). Read the decompiled source. Capture:
-- The class signature.
-- Public method signatures.
-- Any retained `/** */` (rare in shipped JARs).
-
-Mark the snippet `source_ref` as `jar-decompile:<jar>:<entry>`. Add a gap explicitly: "no published doc — answer is bytecode-derived, treat with care".
-
-## Cache write protocol
-
-After a confident hit at any step **other than step 3 (cache hit)**:
-
-1. Compute the cache path:
-   - `library`: `~/.claude/docs-cache/<library>/<version>/<symbol-or-slug>.md`
-   - `internal`: `~/.claude/docs-cache/internal/<qualified-name>.md`
-   - `architecture`: `~/.claude/docs-cache/internal/<module-or-slug>.md`
-2. Build the file body:
-
-```markdown
----
-source: <ladder step label>
-fetched_at: <ISO-8601 UTC>
-ttl_days: <30 for libraries, 7 for web-search-derived URLs, 0 for internal>
-query: "<original query>"
-library: <name or "internal">
-version: <pinned version or empty for internal>
-provenance:
-  - step: <N>
-    ref: <path|url|tool>
----
-
-# <Symbol or topic>
-
-<2–6 sentence summary derived from the snippets>
-
-## Signatures / excerpts
-
-```<lang>
-<verbatim>
-```
-
-## Related
-- <symbol-1>
-- <symbol-2>
-
-## Notes
-<any gaps or version caveats>
-```
-
-3. Update `~/.claude/docs-cache/index.json`:
-
-```json
-{
-  "<library>:<version>:<query-slug>": {
-    "path": "<library>/<version>/<symbol>.md",
-    "source": "<ladder step label>",
-    "fetched_at": "<ISO-8601>",
-    "ttl_days": 30
-  }
-}
-```
-
-If `index.json` does not exist, create it with `mkdir -p` first. Never overwrite the index — read, merge, write.
-
-If `cache_status: hit` (step 3 served the answer), do NOT rewrite — the cache is authoritative until TTL or `--refresh`.
-
-## Steps
-
-- [ ] **Step 1: Classify the query** (Step 0 above) — record `classified_kind`.
-
-- [ ] **Step 2: Determine entry step** — from the `kind`-to-step table.
-
-- [ ] **Step 3: Walk the ladder in order from the entry step** — record every attempted step under `provenance` (with success/miss). Stop at the first **confident hit**, EXCEPT:
-  - If the hit is at step 9 and the query is about API meaning (not packaging), continue to step 10.
-  - If `no_web=true` and the entry is past step 6, never run steps 7 or 8.
-
-- [ ] **Step 4: Build the snippet list**
-  - At `depth=summary`: keep up to 3 of the most-relevant snippets (signature first).
-  - At `depth=full`: keep up to 8, grouped by anchor.
-  - Trim each snippet to the smallest body that grounds the answer — never return a whole HTML page; extract the relevant `<pre>` / `<code>` / `<section>` content.
-
-- [ ] **Step 5: Build the related list**
-  - Sibling symbols on the same page (HTML doc → headings near the matched anchor).
-  - Sibling members on the same class (Javadoc method index).
-  - Cap at 3 (or `max_snippets / 2`, rounded down). Drop self-references.
-
-- [ ] **Step 6: Build the gaps list**
-  - Internal KDoc was empty → "internal KDoc on `<symbol>` is empty; consider adding /** */".
-  - Library doc version differs from project pinned version → "doc applies to <doc-version>; project pins <pinned>".
-  - Source was step 7/8 (web) → "no MCP doc source was wired up; consider installing context7 / ref-context".
-  - Source was step 10 (JAR decompile) → "no published doc — answer is bytecode-derived".
-  - All steps missed → list every step tried + a one-line reason per skip.
-
-- [ ] **Step 7: Write the cache entry** (if `cache_status` is `miss-write` and `winning_source` is non-null).
-
-- [ ] **Step 8: Return the JSON descriptor** per the Output format above.
-
-## Notes
-
-- This skill is the **only** filesystem-writer in this plugin, and it only writes under `~/.claude/docs-cache/`. Never write into the project workspace, never modify `~/.claude/jar-cache/listings/`, never modify any rules file.
-- Keep snippets **verbatim**. Never paraphrase a doc snippet — paraphrasing reintroduces the "made up the API from training data" failure mode this skill exists to prevent. The agent above paraphrases for the Summary, but the snippet body stays verbatim.
-- Per the plugin-shipped `rules/jar-inspection.md` (loaded via the plugin's CLAUDE.md): when listings exist at `~/.claude/jar-cache/listings/`, `jar tf` is forbidden on them — use `grep` against the `.txt` files. When listings are absent, steps 9–10 skip with a recorded gap.
-- For `context7`: always start a lookup with `resolve-library-id` and pass the **full** user question (not single keywords) to `query-docs` (step 5 enforces this).
-- TTL guidance:
-  - Library reference docs (context7, canonical URLs): **30 days** — these change rarely once a version is published; the cache is invalidated naturally on a version bump.
-  - Web-search-derived URLs (step 8): **7 days** — search rankings shift; treat with shorter trust.
-  - Internal KDoc: **0 (no TTL)** — invalidate on file mtime change. Compare cached `fetched_at` to `git log -1 --format=%ct -- <file>` on every read.
-- The cache is **never** authoritative for `--refresh`. `--refresh` always re-walks the ladder from the entry step.
-- For very large repos, scope the step-1 grep to the directories most likely to contain the symbol (`grep -rn --include='*.kt' "\b<symbol>\b" application/ domain/ adapters/`), not the whole tree. The `read-service-context` skill provides the module list.
+**Merge into `~/.claude/docs-cache/index.json`, never overwrite it.** On a step-3 hit, write nothing — the cache is authoritative until TTL or `refresh`.

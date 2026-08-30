@@ -1,8 +1,8 @@
 {
   "name": "komdosh-dev-revealer",
   "displayName": "Revealer",
-  "version": "0.3.0",
-  "description": "Retrieval before invention \u2014 two ladders, one discipline: answer from a real source, cite it, and name the gaps instead of filling them. /reveal <query> surfaces accumulated project knowledge (ADRs, specs, plans, code-embedded DECISION/RATIONALE comments, commit archaeology, and any RAG/MCP knowledge base wired up \u2014 codebase-memory, Confluence/Notion/Linear, context7, ref-context) in survey / decision-trace / gap-find modes. /doc-reveal <symbol|topic|library> resolves source documentation cheapest-first (in-repo KDoc/Javadoc \u2192 project docs \u2192 local cache \u2192 MCP \u2192 canonical web docs \u2192 pre-indexed JAR listings \u2192 decompilation as a last resort), caching results so repeats are instant. 2 agents \u00b7 2 commands \u00b7 2 skills \u00b7 1 rule. Read-only on project source; degrades gracefully when no MCP is configured.",
+  "version": "0.4.0",
+  "description": "Retrieval before invention. /reveal surfaces what the project already decided — ADRs, specs, plans, decision comments, commit archaeology, and any RAG/MCP knowledge base wired up. /doc-reveal finds real documentation for a symbol or library, cheapest source first (in-repo KDoc, project docs, cache, MCP, canonical web docs, jar listings, decompilation last) and caches the result. Both cite their source and name the gaps instead of filling them; a gap is a result, an invented citation is the failure. Requires komdosh-dev-spring-core.",
   "author": {
     "name": "Andrey Tabakov",
     "email": "ave.tabakov@gmail.com",

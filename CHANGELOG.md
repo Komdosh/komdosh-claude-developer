@@ -2,6 +2,47 @@
 
 All notable changes to this marketplace. Format follows [Keep a Changelog](https://keepachangelog.com/); the marketplace `version` in `.claude-plugin/marketplace.json` tracks the wave, individual plugins version independently.
 
+## [0.6.0] — 2026-08-30
+
+Compaction wave. A redundancy review of all 8 plugins — this time of the *prose*, not the plugin graph — cuts the marketplace nearly in half and fixes six real defects, several of them left behind by the 0.5.0 consolidation. No capability removed: the same 30 agents, 53 commands, 39 skills, and 42 rules ship, saying less.
+
+The organising principle, now written into the README as a fourth design rule: **write down what a good model gets wrong, not what it already knows.** A rule earns its place by naming a project-specific decision, a non-obvious trap, a hard prohibition, or a routing boundary. Naming conventions, REST verb semantics, `data class` over `class`, and a code sample of a standard idiom are none of those — they cost context on every session and teach nothing. The corollary applies to structure: a `CLAUDE.md` section that summarises rule files imported in full twenty lines below it is pure duplication, and "when editing this plugin" instructions are paid for in every user session by the ~0% of sessions that edit the plugin.
+
+The always-loaded budget — every `CLAUDE.md` plus every `@rules/*.md` import, paid on every session — drops from **232 KB to 115 KB (−50%)**, roughly 30k tokens reclaimed with the full suite installed. Total plugin content: **834 KB → 440 KB (−47%)**, 11,769 lines deleted against 2,621 added.
+
+| Plugin | Always-loaded |
+|---|---|
+| `spring-core` | 91 KB → 39 KB (−58%) |
+| `spring-quality` | 22 KB → 9 KB (−57%) |
+| `spring-delivery` | 22 KB → 13 KB (−41%) |
+| `revealer` | 8.1 KB → 3.4 KB (−58%) |
+| `kotlin-extras` | 1.4 KB → 0.6 KB (−60%) |
+| `infra-core` | 33 KB → 18 KB (−45%) |
+| `infra-iac` | 32 KB → 18 KB (−42%) |
+| `infra-k8s` | 24 KB → 14 KB (−42%) |
+
+### Fixed
+
+- **36 of 53 commands shipped with no frontmatter**, so they showed no description in the `/` menu — and `lint-marketplace.sh` check 4, whose header claimed to cover "every agent/command/skill", globbed only `agents/*.md` and `skills/*/SKILL.md`. The lint never looked at a command, so the gap survived every commit since commands were introduced. Every command now declares `description` (plus `argument-hint` where it takes arguments); the lint globs `commands/*.md` in both the frontmatter check and the description-budget check, going from 234 to **340 checks**.
+- **`recommend-plugin` could never recommend half the marketplace.** Its discovery filtered installed plugins to `komdosh-dev-{spring,kotlin}-*` in three places — the `marketplace.json` fallback search, the `find` pattern, and the name guard — so `infra-core`, `infra-iac`, `infra-k8s`, and `revealer` were structurally invisible to it. Its own worked example then told the user that authoring a Helm chart had "no marketplace capability", which `infra-k8s` has owned since 0.4.0. Discovery now matches the whole `komdosh-dev-*` namespace, and the disambiguation rules route manifests, Helm, ArgoCD, Terraform, cloud resources, and infra PII to the infra plugins explicitly.
+- **Three gates keyed off marker files that nothing writes.** `lifecycle-status` gate 13 (code review) looked for `docs/.last-review.json` and gate 15 (service readiness) for `docs/.last-readiness-audit.json`, both described as files the reviewing agent "could write" — but `code-reviewer` carries `disallowedTools: [Edit, Write, …]`, so it structurally cannot write one, and no other agent does. `library-publisher` gated its publish flow on a `docs/release/.last-readiness-*.json` that `/release-prep` never emits. The phantom markers are gone: gates 13 and 15 report **UNKNOWN by design** with the reason stated, and the publish flow requires a `/release-prep` observed passing in-session rather than inferred from disk.
+- **`discover-infra-context` emitted dead plugin names.** Its descriptor's `recommended_plugin` field still offered `infra-terraform`, `infra-kubernetes`, `infra-argocd`, and `infra-yandex` — all merged away in 0.5.0 — so a consumer routing on that field was pointed at plugins that no longer exist. Now `komdosh-dev-infra-iac | komdosh-dev-infra-k8s | komdosh-dev-infra-core`.
+- **Consolidation leftovers from 0.5.0.** `infra-reviewer` and `data-protection-auditor` listed merged agents twice in their routing tables (`iac-author, k8s-author, k8s-author, iac-author`); `infra-core`'s `CLAUDE.md` named each sibling plugin twice and called six rule files "the five"; `yc-terraform.md` closed with a delegation section handing YC work "back to `iac-author`" from a plugin whose author *is* `iac-author`; and `infra-k8s` deferred to `k8s-diagnostician` "if the kubernetes plugin is installed", though that agent ships in `infra-k8s` itself. All corrected, and the remaining `yandex plugin` / `terraform plugin` prose references now name the plugins that exist.
+- **Invalid frontmatter and broken cross-plugin links.** `security-auditor` declared `skills: [… core/pii-safety-scan (depth=audit)]`, which resolves to no skill — the depth argument belonged in the body, not the name. `spring-quality`'s `platform-module.md` linked to `domain-purity.md`, `hexagonal.md`, and `check-adr-required` as if they were siblings when all three live in `spring-core`; the lint's link check only ever scanned `CLAUDE.md`, so rule-file links were unverified. Every relative markdown link across all 8 plugins now resolves.
+
+### Changed
+
+- **`CLAUDE.md` files rewritten** to carry only what the rules and frontmatter cannot: the plugin's boundary, the non-obvious composition decisions, and the routing between siblings. Removed from all eight: the layout table (agents, commands, and skills already surface their own descriptions), the "Conventions imported as rules" bullet summary of files imported in full immediately below, and the "When editing this plugin" authoring instructions.
+- **Rules rewritten to the keep/cut test.** Cut: naming conventions, `data class`/`val` preference, standard HTTP status semantics, REST resource shapes, and the illustrative code blocks for idioms a model already writes. Kept and in places sharpened: the 12 forbidden coroutine patterns (with the four that compile-and-pass-tests called out), Liquibase checksum immutability, jOOQ `Record` containment, the Avro null-first union / enum-ordinal / missing-alias traps, the Apicurio v2-vs-v3 path trap, `forces replacement`, `for_each` reindex churn, memory-limit-equals-request, sync-status vs health-status, and the 152-FZ ⇄ GDPR divergence.
+- **Agents no longer restate their own rules.** `test-writer` reproduced most of `rules/testing.md` including its code samples; `backend-implementer` restated the coroutine checklist and the hexagonal layer table; `code-reviewer` and `security-auditor` restated the severity tables their rule files define. Each now cites the rule and spends its words on what only it knows — its boundary, its order of operations, its escalations, and the failure mode it exists to prevent.
+- **Skills keep their executable content and lose the ceremony.** The greps, the check tables, the JSON descriptors, and the resolution ladders are the value and are intact; the "When to Use" / "Do NOT" / "Output" scaffolding around them, and the worked output templates, are not.
+- **Manifest descriptions cut from inventories to discovery text.** Each `plugin.json` and the matching `marketplace.json` entry ran 1,000–1,900 characters enumerating every agent, command, and skill — an inventory nobody browses. Now 400–620 characters saying what the plugin is for and what it refuses to do.
+- **README** updated for the fourth design principle, with the plugin cards trimmed and the stale lint claim ("15 check families, 230+ checks") corrected to 340.
+
+### Not verified
+
+The plugins were not installed and exercised as part of this pass, and the bash inside skills is unchanged but untested. Pre-existing third-party claims were preserved rather than re-confirmed against upstream: the davidmc24 1.4.0 Kotlin task-wiring change, the Apicurio Registry v2/v3 URL split, and Nimbus decoder defaults.
+
 ## [0.5.0] — 2026-08-10
 
 Consolidation wave. A redundancy review of all 18 plugins found two real defects and several capabilities implemented two or three times over. The marketplace collapses to **8 plugins / 30 agents** (was 18 / 45), with no capability removed — the library release track, all three QA output formats, and kotlin-extras are intact.

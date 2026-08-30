@@ -1,43 +1,16 @@
-# /adr-new [decision description]
+---
+description: Record a within-service architectural decision as an ADR in docs/adr/, after confirming one is actually warranted.
+argument-hint: "[decision description]"
+---
 
-Record a within-service architectural decision as a durable ADR in `docs/adr/`. Checks that an ADR is actually warranted, then writes it inline — no subagent, because the work is one templated file and a subagent would only lose the conversation context that holds the actual rationale.
+# /adr-new
 
-## Steps
+Written inline, no subagent — the rationale lives in this conversation, and a subagent would not have it.
 
-- [ ] **Step 1: Get the decision description**
-
-If the user provided one, use it. Otherwise ask: "What decision are you recording? Briefly describe what was chosen and what alternatives were considered."
-
-- [ ] **Step 2: Check existing ADRs for overlap**
-
-```bash
-ls docs/adr/ 2>/dev/null | head -20
-```
-
-If an existing ADR already covers this decision: "ADR `<number>` already covers this. No new ADR needed." Stop.
-
-- [ ] **Step 3: Run the `check-adr-required` skill**
-
-Pass the decision description.
-
-- `NOT REQUIRED` → "This decision does not meet the threshold for an ADR. Proceeding without one." Stop.
-- `REQUIRED` or `BORDERLINE` → continue.
-
-An ADR is warranted when the decision is hard to reverse, there were at least two reasonable alternatives, and it sits inside this service's boundary.
-
-- [ ] **Step 4: Find the next ADR number**
-
-```bash
-ls docs/adr/ 2>/dev/null | grep -E '^[0-9]' | sort -V | tail -1
-```
-
-Increment by 1. If `docs/adr/` doesn't exist: `mkdir -p docs/adr` and start at `0001`.
-
-- [ ] **Step 5: Write `docs/adr/NNNN-<decision-slug>.md`**
-
-The slug is lowercase and hyphenated and names the *decision*, not the outcome — `0001-use-jooq-for-persistence.md`, `0002-coroutine-safe-transaction-pattern.md`.
-
-Use this template exactly:
+1. Check `docs/adr/` for overlap. If an existing ADR covers it, cite it and stop.
+2. Run `check-adr-required`. `NOT REQUIRED` → say so and stop. `REQUIRED`/`BORDERLINE` → continue.
+3. Next number from `docs/adr/`, starting at `0001`. Slug names the **decision**, not the outcome: `0001-use-jooq-for-persistence.md`.
+4. Write it:
 
 ```markdown
 # NNNN: <Decision Title>
@@ -46,43 +19,19 @@ Use this template exactly:
 **Status**: Accepted
 
 ## Context
-
-<Why does this decision need to be made? What constraints, requirements, or events led here?>
+<What forced this decision — constraints, requirements, the triggering event.>
 
 ## Decision
-
-<What was decided? Be specific — name the technology, pattern, or approach.>
+<What was decided. Name the technology, pattern, or approach specifically.>
 
 ## Consequences
-
 ### Positive
-- <Benefit 1>
-- <Benefit 2>
-
 ### Negative / Trade-offs
-- <Trade-off 1>
-- <Risk 1>
 
 ## Alternatives Considered
-
-### Alternative A: <Name>
-<Why it was rejected, in one or two sentences.>
-
-### Alternative B: <Name>
-<Why it was rejected, in one or two sentences.>
+### <Name> — <why it was rejected, in one or two sentences>
 ```
 
-Record only what was actually decided and actually considered. An invented alternative is worse than a short ADR — someone will later treat it as evidence the option was evaluated.
+**Record only what was actually decided and actually considered.** An invented alternative is worse than a short ADR — someone will later read it as evidence that option was evaluated.
 
-- [ ] **Step 6: Suggest the commit (do not run it)**
-
-Print, but do not execute:
-
-```bash
-git add docs/adr/<file>
-git commit -m "docs: add ADR <number> — <decision-title>"
-```
-
-- [ ] **Step 7: Report**
-
-State the ADR number, title, file path, status, and that the commit was suggested but not executed.
+5. Print the `git add`/`git commit` commands; **do not run them**.

@@ -7,15 +7,15 @@ description: Resolve the Yandex Cloud context for an IaC repo into a structured 
 
 # Discover Yandex Cloud Context
 
-Establish which cloud/folder/zone the work targets and which YC services are in play, so provisioning and audit are grounded in the real context. Read-only. Track as a todo when invoked.
+Establish which cloud/folder/zone the work targets and which YC services are in play, so provisioning and audit are grounded in the real context. Read-only.
 
-## Step 1: Resolve cloud / folder / zone
+## 1. Resolve cloud / folder / zone
 
 - **From the CLI (best-effort)**: `yc config list` → `cloud-id`, `folder-id`, `compute-default-zone`. Record them. If the CLI is absent or unconfigured, skip — don't fail.
 - **From Terraform**: read the `provider "yandex"` block and its variables/tfvars for `cloud_id`, `folder_id`, `zone`. Flag any hardcoded literal (should be a variable — `rules/yc-terraform.md`).
 - Reconcile: if the CLI folder and the Terraform folder differ, note it — the session may be pointed at the wrong environment.
 
-## Step 2: Inventory declared YC resources
+## 2. Inventory declared YC resources
 
 Grep the Terraform for `yandex_*` resources and bucket them:
 
@@ -30,16 +30,16 @@ Grep the Terraform for `yandex_*` resources and bucket them:
 
 Record counts and which environments each appears in.
 
-## Step 3: Auth model
+## 3. Auth model
 
 - Is the provider using a bound service account / instance metadata (keyless), a short-lived IAM token, or a `service_account_key_file` (long-lived — a finding to scrutinise)?
 - Are there `*-key.json` files in the tree, or SA keys/static keys written to `.tfvars`/outputs? Route to `secrets-sentinel`.
 
-## Step 4: State backend
+## 4. State backend
 
-- The Object Storage `s3` backend block: bucket, key, encryption, locking. Local state is a finding (terraform plugin `rules/terraform-state-safety.md`).
+- The Object Storage `s3` backend block: bucket, key, encryption, locking. Local state is a finding (`rules/terraform-state-safety.md`).
 
-## Step 5: Return the descriptor
+## 5. Return the descriptor
 
 ```json
 {

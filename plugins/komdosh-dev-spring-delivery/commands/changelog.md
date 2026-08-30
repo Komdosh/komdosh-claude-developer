@@ -1,38 +1,16 @@
-# /changelog [version]
+---
+description: Generate or update the CHANGELOG.md section for the next release from Conventional Commits since the last tag.
+argument-hint: "[version]"
+---
 
-Generate or update a `CHANGELOG.md` entry for the next release. Reads commits since the last release tag, classifies them via Conventional Commits, and writes a Keep-a-Changelog-formatted section. Identical UX on service and library tracks.
+# /changelog
 
-## Steps
+Same on both tracks.
 
-- [ ] **Step 1: Determine the target version**
+1. Target version from the argument, else the project's declared version, else ask.
+2. Run `write-changelog`. It locates the last tag (falling back to the root commit **and saying so**), groups commits into the Keep-a-Changelog sections, optionally enriches terse subjects via `reveal-knowledge` when revealer is installed, and updates or creates `CHANGELOG.md`.
+   **Every entry traces to a real commit** — the skill invents nothing and never rewrites a prior section.
+3. Show the new section plus the per-section counts and skipped-commit count.
+4. Print the commit commands; do not run them.
 
-If the user supplied one, use it.
-
-If not, look for a version in `gradle/libs.versions.toml` (alias `project` or `app`) or `build.gradle.kts` (`version =`). Use that as the default.
-
-If still ambiguous: ask the user.
-
-- [ ] **Step 2: Run the `write-changelog` skill**
-
-Pass the target version. The skill:
-
-1. Locates the last release tag (falling back to the root commit, and saying so).
-2. Reads `git log <last-tag>..HEAD --no-merges`.
-3. Groups commits by Conventional-Commits prefix into Added / Changed / Deprecated / Fixed / Breaking / Removed / Security.
-4. Optionally enriches terse commits via `reveal-knowledge` when `komdosh-dev-revealer` is installed.
-5. Updates `CHANGELOG.md`, creating it with the Keep-a-Changelog header if absent.
-
-Every entry traces to a real commit — the skill never invents one, and never rewrites a prior section.
-
-- [ ] **Step 3: Print the report**
-
-Show the new section that was added, plus stats (entries per section, terse commits enriched, commits skipped).
-
-- [ ] **Step 4: Suggest the commit (do not run it)**
-
-```bash
-git add CHANGELOG.md
-git commit -m "chore(release): update changelog for vX.Y.Z"
-```
-
-If the changelog flagged any breaking changes that the user did not previously call out (no `feat!:` or `BREAKING CHANGE:` footer in any commit), ALERT them — they may need to bump the version's major component via `/version-bump` and reconcile.
+**If the section contains breaking changes that no commit marked with `!` or a `BREAKING CHANGE:` footer, alert the user** — the version they are about to cut is probably wrong, and `/version-bump` should be reconciled first.

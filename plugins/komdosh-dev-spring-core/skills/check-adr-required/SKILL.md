@@ -5,54 +5,16 @@ description: Use when a within-service architectural decision (storage technolog
 
 # Check ADR Required
 
-## When to Use
+State the decision in one sentence, then check `docs/adr/` — if an existing ADR already covers it, return NOT REQUIRED and cite it.
 
-Call this skill before beginning implementation when a non-trivial decision has been made that could affect the long-term shape of the service. Examples that commonly warrant an ADR:
-- Choosing a caching strategy (in-memory vs Redis vs none)
-- Selecting a new library for a significant concern (auth, serialization, metrics)
-- Picking a persistence pattern (outbox vs direct publish, jOOQ vs Exposed)
-- Adopting an internal architectural pattern (CQRS, event sourcing within the service)
+**REQUIRED** when all three hold:
 
-## Decision Criteria
+1. Hard to reverse — changing it later touches multiple modules or needs a data migration.
+2. At least two reasonable alternatives existed; the choice was not obvious.
+3. Within this service's boundary, not cross-service or platform-level.
 
-An ADR is **REQUIRED** when ALL three are true:
-1. The decision is hard to reverse (changing it later would touch multiple modules or require a data migration).
-2. There were at least 2 reasonable alternatives (the choice was not obvious).
-3. The decision is within this service's boundary (not a cross-service or platform-level decision).
+**NOT REQUIRED** for the obvious default, an easily reversible choice, a purely stylistic one, or anything already documented.
 
-An ADR is **NOT REQUIRED** when:
-- The choice is the obvious default (e.g., "use a standard Spring bean for this service").
-- The change is easily reversible with no migration cost.
-- The decision is purely cosmetic/stylistic (covered by code-style rules).
-- It is already documented elsewhere (existing ADR, spec doc, CLAUDE.md).
+**BORDERLINE** when 1 and 2 hold but the scope is narrow — recommend `/adr-new`, don't block.
 
-**BORDERLINE**: criteria 1 and 2 are true but the scope is narrow (e.g., adding one small library for a focused use case). Recommend an ADR but do not block.
-
-## Steps
-
-- [ ] **Step 1: State the decision in one sentence**
-
-Write: "The decision is: [describe what was chosen]."
-
-- [ ] **Step 2: Check existing ADRs for overlap**
-
-```bash
-ls docs/adr/ 2>/dev/null | head -20
-```
-
-If an existing ADR covers this decision, reference it and return NOT REQUIRED.
-
-- [ ] **Step 3: Apply the three criteria**
-
-Score each criterion: YES / NO / PARTIAL.
-
-- [ ] **Step 4: Return verdict**
-
-Return exactly one of:
-- `REQUIRED` — proceed to `/adr-new` before writing code.
-- `NOT REQUIRED` — proceed directly to implementation.
-- `BORDERLINE: <one sentence rationale>` — recommend `/adr-new` but do not block.
-
-## Important
-
-If `REQUIRED` or `BORDERLINE`: remind the calling agent to invoke `/adr-new` and save the ADR to `docs/adr/NNNN-<slug>.md` before beginning implementation.
+Return exactly `REQUIRED` / `NOT REQUIRED` / `BORDERLINE: <rationale>`. On the first two, the ADR lands at `docs/adr/NNNN-<slug>.md` **before** implementation begins.

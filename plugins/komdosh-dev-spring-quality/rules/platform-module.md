@@ -1,183 +1,58 @@
-# Platform Module Rules
+# Platform Module (`common/`)
 
-Application code (`application/`, `domain/`) must depend only on **abstractions**, not on framework or library implementation types. The single source of truth for those abstractions is a leaf module called `common/` (also acceptable: `platform/`). Concrete adapters in `adapters/outbound/` and `boot/` implement the abstractions.
+Keep the **centre** of the hexagon — `domain/` and `application/` — free of vendor coupling by routing every cross-cutting capability through abstractions in a leaf module called `common/` (or `platform/`). Adapters at the edges stay vendor-coupled; that is their purpose.
 
-This rule complements [`rules/domain-purity.md`](domain-purity.md) (banned imports) and [`rules/hexagonal.md`](hexagonal.md) (module direction). Where those forbid leaks of specific packages, this file says where the abstractions go and what shape they take.
+Complements core's `rules/domain-purity.md` (which packages are banned) and `rules/hexagonal.md` (which direction dependencies run). This file says where the abstractions live and what shape they take.
 
-## Module Layout
+## Layout
 
 ```
-common/
-├── observability/         MetricsRegistry, MetricsCounter, MetricsTimer (Micrometer abstraction)
-├── time/                  ApplicationClock (java.time.Clock wrapper or pass-through)
-├── serialization/         JsonCodec (Jackson abstraction; rare — usually only at adapter boundaries)
-├── transaction/           TxRunner (TransactionalOperator abstraction)
-├── messaging/             OutboxPublisher, MessagePublisher (broker abstraction)
-└── ids/                   IdGenerator (UUID/Snowflake abstraction)
-
-domain/         → depends on common/ (interfaces only — never on Micrometer, jOOQ, Spring directly)
-application/    → depends on common/ + domain/
-adapters/outbound/  → implements common/ interfaces using concrete libraries (Micrometer, jOOQ, etc.)
-boot/           → wires the implementations into the common/ interfaces
+common/observability/   MetricsRegistry, MetricsCounter, MetricsTimer
+common/time/            ApplicationClock
+common/transaction/     TxRunner
+common/messaging/       MessagePublisher / OutboxPublisher
+common/serialization/   JsonCodec        (rare — usually adapter-local)
+common/ids/             IdGenerator
 ```
 
-`common/` itself depends on **nothing** (Java standard library only — `java.time`, `java.util`, kotlinx-coroutines is acceptable). It is as pure as `domain/`.
+`domain/` and `application/` depend on `common/` interfaces · `adapters/outbound/` implements them against the real libraries · `boot/` wires the two together.
 
-## What Belongs in `common/`
+**`common/` itself depends on nothing** but the JDK and kotlinx-coroutines. It is as pure as `domain/`.
 
-A type belongs in `common/` if and only if:
+## The three-part test
 
-1. The application layer needs to call it (read or write).
-2. The current implementation pulls in a framework / library that we don't want in `application/` (Micrometer, jOOQ, Reactor, Jackson, Spring beyond `@Service`/`@Transactional`).
-3. There is a plausible alternative implementation (test fake, in-memory, different vendor) that we want to be able to swap.
+A type belongs in `common/` only when **all three** hold:
 
-If only #1 holds (no library leak, no swap concern), `application/` calls the JDK type directly — no abstraction needed.
+1. The application layer calls it.
+2. Its implementation pulls in a framework we don't want in `application/` — Micrometer, jOOQ, Reactor, Jackson, the Kafka client, R2DBC, Spring beyond `@Service`/`@Transactional`.
+3. A plausible alternative implementation exists worth swapping to — a test fake, in-memory, another vendor.
 
-## Abstraction Shape Examples
+Only #1? `application/` calls the JDK type directly. No abstraction.
 
-### Metrics (replaces `MeterRegistry`, `Counter`, `Timer`)
+Shapes stay minimal — `TxRunner.inTransaction(block)`, `ApplicationClock.now()`, `MetricsRegistry.counter(name, tags)`. `MetricsTimer` exposes `recordSuspending`, because that is exactly the gap Micrometer's own `Timer` leaves (`rules/observability.md`).
 
-```kotlin
-// common/observability/MetricsRegistry.kt
-package com.example.common.observability
+## What does not belong
 
-interface MetricsRegistry {
-    fun counter(name: String, vararg tags: Pair<String, String>): MetricsCounter
-    fun timer(name: String, vararg tags: Pair<String, String>): MetricsTimer
-}
+Domain types (they're `domain/`) · use cases (`application/`) · concrete library instances like the `MeterRegistry` or `DSLContext` (constructed in `boot/`) · DTOs (next to their adapter) · **anything used by only one adapter** — an `ObjectMapper` used only by the web adapter stays there.
 
-interface MetricsCounter {
-    fun increment(amount: Double = 1.0)
-}
+## When to introduce it
 
-interface MetricsTimer {
-    suspend fun <T> recordSuspending(block: suspend () -> T): T
-}
-```
+Introducing `common/` changes the build graph and every import — it is hard to reverse. Run core's `check-adr-required` first; the answer is almost always REQUIRED.
 
-```kotlin
-// adapters/outbound/observability/MicrometerMetricsRegistry.kt
-class MicrometerMetricsRegistry(private val delegate: io.micrometer.core.instrument.MeterRegistry) : MetricsRegistry {
-    override fun counter(name: String, vararg tags: Pair<String, String>): MetricsCounter =
-        MicrometerCounter(io.micrometer.core.instrument.Counter.builder(name).tags(*tags.toTagsArray()).register(delegate))
-    // ...
-}
-```
+Threshold signals: `MeterRegistry` in 5+ application services · `TransactionalOperator` in 3+ · a vendor swap or migration blocked by widespread direct dependencies.
 
-The application service depends only on `MetricsRegistry`. `MeterRegistry` never appears in `application/` source.
+**Below that, a private inline abstraction next to the one service is sufficient.** Don't create a module for two consumers.
 
-### Transactions (replaces `TransactionalOperator`)
+## Enforcement
 
-```kotlin
-// common/transaction/TxRunner.kt
-package com.example.common.transaction
+Once `common/` exists, add two ArchUnit rules in `tests/architecture/`: `application` must not depend on `io.micrometer..`, `org.jooq..`, `com.fasterxml.jackson..`, `org.apache.kafka..`, `io.r2dbc..`, or `reactor.core..`; and `common` must not depend on Spring or any vendor library. Without them the module decays back into a coupled one within a release.
 
-interface TxRunner {
-    suspend fun <T> inTransaction(block: suspend () -> T): T
-}
-```
-
-```kotlin
-// adapters/outbound/transaction/SpringTxRunner.kt
-class SpringTxRunner(private val delegate: TransactionalOperator) : TxRunner {
-    override suspend fun <T> inTransaction(block: suspend () -> T): T =
-        delegate.executeAndAwait { block() }
-}
-```
-
-### Time (often a pass-through, but worth wrapping for testability)
-
-```kotlin
-// common/time/ApplicationClock.kt
-package com.example.common.time
-
-import java.time.Clock
-import java.time.Instant
-
-interface ApplicationClock {
-    fun now(): Instant
-}
-
-class JdkApplicationClock(private val delegate: Clock = Clock.systemUTC()) : ApplicationClock {
-    override fun now(): Instant = delegate.instant()
-}
-
-class FixedApplicationClock(private val fixed: Instant) : ApplicationClock {
-    override fun now(): Instant = fixed
-}
-```
-
-The application uses `clock.now()` everywhere — never `Instant.now()` (which is hard to fake) or `java.time.Clock` directly (which is fine but loses the convention of `clock.now()`).
-
-### Outbox Publishing (broker abstraction)
-
-```kotlin
-// common/messaging/OutboxPublisher.kt
-package com.example.common.messaging
-
-interface OutboxPublisher {
-    suspend fun publish(topic: String, key: String?, payload: ByteArray, headers: Map<String, String> = emptyMap())
-}
-```
-
-The Kafka, SQS, or RabbitMQ implementation lives in `adapters/outbound/messaging/`. The application service publishes via the interface only.
-
-## What Does NOT Belong in `common/`
-
-- **Domain types.** Order, Customer, Money — these are domain concepts. They live in `domain/`.
-- **Application use cases.** OrderService, CreateOrderHandler — they live in `application/`.
-- **Concrete library configuration.** The Micrometer registry instance, the jOOQ `DSLContext` — they're constructed in `boot/`.
-- **DTOs and request/response shapes.** They live next to the inbound or outbound adapter that produces them.
-- **Anything that's only used in one adapter.** If a Jackson `ObjectMapper` is only used by `adapters/inbound/web/`, it stays there — don't preemptively abstract it.
-
-The goal of `common/` is to keep the **center** of the hexagon (domain + application) free of vendor coupling. Edges of the hexagon (adapters) are allowed to be vendor-coupled — that's their purpose.
-
-## When to Introduce a `common/` Module
-
-Introducing `common/` is a hard-to-reverse architectural decision (it changes the build graph, every import). Run [`check-adr-required`](../skills/check-adr-required/SKILL.md) first; the answer will almost always be `REQUIRED`. Capture the choice in `docs/adr/NNNN-introduce-common-platform-module.md`.
-
-Common signals that you've reached the threshold:
-
-- `MeterRegistry`, `Counter`, `Timer` appear in 5+ application services.
-- `TransactionalOperator` is injected in 3+ application services.
-- A team wants to swap the messaging broker, JSON library, or metrics backend and is blocked by widespread direct dependencies.
-- The team is migrating from one vendor to another and needs a stable seam.
-
-If only one or two services touch a vendor type, an inline private abstraction (a `private object MetricsKit { ... }` next to the service) is sufficient. Don't create a module for one or two consumers.
-
-## ArchUnit Enforcement
-
-Add to `tests/architecture/` once `common/` exists:
-
-```kotlin
-@ArchTest
-val applicationOnlyKnowsCommonAndDomain: ArchRule = noClasses()
-    .that().resideInAPackage("..application..")
-    .should().dependOnClassesThat()
-    .resideInAnyPackage(
-        "io.micrometer..",
-        "org.jooq..",
-        "com.fasterxml.jackson..",
-        "org.apache.kafka..",
-        "io.r2dbc..",
-        "reactor.core..",
-    )
-    .because("application must depend on common/ interfaces, not on vendor types directly")
-
-@ArchTest
-val commonHasNoVendorDeps: ArchRule = noClasses()
-    .that().resideInAPackage("..common..")
-    .should().dependOnClassesThat()
-    .resideInAnyPackage("org.springframework..", "io.micrometer..", "org.jooq..", "com.fasterxml.jackson..")
-    .because("common/ must be vendor-neutral so it can host swappable abstractions")
-```
-
-## Forbidden Patterns
+## Forbidden
 
 | # | Pattern | Why |
 |---|---|---|
-| 1 | `import io.micrometer.core.instrument.MeterRegistry` in `application/` | Defeats the purpose — wraps the dependency only at the import site |
-| 2 | `common/` depending on Spring or any vendor library | Defeats the purpose — `common/` becomes coupled |
-| 3 | Putting domain entities in `common/` | Domain belongs in `domain/`; `common/` is for cross-cutting platform abstractions |
-| 4 | Multiple "common" modules (`common-utils`, `common-time`, `common-metrics`) | One `common/` with sub-packages keeps the build graph manageable; split only when boundaries are clear and stable |
-| 5 | Abstracting just for the sake of abstracting (Clock with no test fake yet, JsonCodec with one Jackson impl and no plan for swap) | YAGNI — wait for the second consumer or the test pain before introducing the abstraction |
+| 1 | A vendor import in `application/` | Wrapping the dependency only at the import site defeats the point |
+| 2 | `common/` depending on Spring or a vendor library | `common/` becomes the coupling it was built to remove |
+| 3 | Domain entities in `common/` | Domain belongs in `domain/` |
+| 4 | Several `common-*` modules | One `common/` with sub-packages; split only when the boundaries are stable |
+| 5 | Abstracting with no second implementation and no test pain yet | YAGNI — wait for the second consumer |

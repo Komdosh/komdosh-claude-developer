@@ -1,8 +1,8 @@
 {
   "name": "komdosh-dev-infra-k8s",
   "displayName": "Kubernetes + ArgoCD",
-  "version": "0.1.0",
-  "description": "Kubernetes manifest authoring, security hardening, workload troubleshooting, and ArgoCD GitOps delivery. Ships three agents \u2014 k8s-author (hardened Deployments/StatefulSets, Kustomize overlays, Helm values, all three probes, PDB, topology spread, graceful shutdown; plus ArgoCD Application/ApplicationSet/AppProject with pinned prod revisions, scoped projects, prune+selfHeal, sync waves), the read-only k8s-auditor (Pod Security Standards restricted + resource discipline + reliability on the rendered manifests, plus GitOps hygiene \u2014 moving prod revisions, default projects, inline secrets, drift-hiding ignoreDifferences), and the read-only k8s-diagnostician (root-cause diagnosis of CrashLoopBackOff / ImagePullBackOff / OOMKilled / Pending / probe failures, and of OutOfSync / Degraded / stuck-Progressing / drifting apps \u2014 separating sync status from health status). Four skills: discover-k8s-workloads, probe-cluster-state, discover-argocd-apps, probe-app-health. Five rules: k8s-manifests, k8s-security, k8s-resources, argocd-applications, gitops-delivery. Six commands: /k8s-manifest, /k8s-audit, /k8s-debug, /argo-app, /argo-audit, /argo-diagnose. Never mutates a cluster and never syncs out of band \u2014 rollback is git revert. Requires komdosh-dev-infra-core.",
+  "version": "0.2.0",
+  "description": "Kubernetes manifests, hardening, workload troubleshooting, and ArgoCD delivery. Three agents with disjoint verbs — author, auditor, diagnostician — split by what you are doing rather than which tool, so a Deployment and the Application that ships it stay one change. Author and auditor work on the rendered manifest, because an overlay can silently drop a hardening patch the base contains. The diagnostician separates sync status from health status and refuses workarounds that hide a symptom. Never mutates a cluster; rollback is git revert. Requires komdosh-dev-infra-core.",
   "author": {
     "name": "Andrey Tabakov",
     "email": "ave.tabakov@gmail.com",

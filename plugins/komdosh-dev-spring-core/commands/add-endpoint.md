@@ -1,46 +1,16 @@
-# /add-endpoint [description]
+---
+description: Add an HTTP endpoint — reads existing controller conventions, wires auth if the route is protected, implements it, and covers it with a WebFluxTest.
+argument-hint: "[endpoint description]"
+---
 
-Add a new HTTP endpoint to the service. Reads existing controller conventions, optionally applies `rules/spring-security.md` for protected routes, then invokes backend-implementer and test-writer.
+# /add-endpoint
 
-## Steps
+Ask for the endpoint (method, path, behaviour, response) if not given.
 
-- [ ] **Step 1: Get the endpoint description**
+1. **Read one or two existing `*Controller.kt` under `adapters/inbound/`** for the route prefix, DTO shape, and error pattern actually in use. Mirror them.
+2. Ask whether the route requires authentication. If yes, apply `rules/spring-security.md` — including the deny-case test, which is not optional.
+3. `backend-implementer` for the handler and service logic.
+4. `test-writer` for a `@WebFluxTest` covering success, not-found, and validation failure.
+5. `run-verification`.
 
-If the user provided a description, use it.
-If not, ask: "Describe the new endpoint — method, path, what it does, and what it returns."
-
-- [ ] **Step 2: Read existing controllers for conventions**
-
-```bash
-find . -name "*Controller.kt" -path "*/inbound/*" -not -path "*/build/*" | head -3
-```
-
-Read 1-2 existing controller files to understand:
-- Route prefix conventions
-- Request/response DTO structure
-- Error handling pattern
-
-- [ ] **Step 3: Check authentication requirement**
-
-Ask: "Does this endpoint require authentication? (y/n)"
-
-- [ ] **Step 4: Implement the endpoint**
-
-If protected (user said y):
-→ Invoke `rules/spring-security.md` with the endpoint spec and auth requirements.
-  After the security config changes are defined per `rules/spring-security.md`, invoke `backend-implementer` for the handler + service logic.
-
-If unprotected (user said n):
-→ Invoke `backend-implementer` with the endpoint spec.
-
-- [ ] **Step 5: Write tests**
-
-→ Invoke `test-writer` with: "Write a `@WebFluxTest` for the new endpoint, covering success case, not-found case, and any validation errors."
-
-- [ ] **Step 6: Run verification**
-
-Run `run-verification` skill.
-
-- [ ] **Step 7: Report**
-
-State: new route registered, request/response shapes, auth applied (if any), test file created.
+Report the route, request/response shapes, auth applied, and the test file.

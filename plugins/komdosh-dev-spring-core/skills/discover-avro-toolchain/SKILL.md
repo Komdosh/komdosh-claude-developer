@@ -6,148 +6,25 @@ description: "Detects which Avro code-generation plugin and which Schema Registr
 
 # Discover Avro Toolchain
 
-## When to Use
+Read-only detection, run before any Avro work. **Detect, then report — never assume a toolchain, and never edit Gradle** (that is delegated to `rules/gradle-build.md`). "No Avro setup" is a valid verdict, not a failure.
 
-Run this skill before any Avro-related work. The avro-schema-author agent and all three `/avro-*` commands invoke it. It is read-only and produces a structured JSON verdict that the calling command/agent uses to pick file paths, plugin defaults, and Spring config snippets.
+## Detect
 
-## Do NOT
+Grep `*.gradle.kts`, `*.gradle`, and `libs.versions.toml` (excluding `build/`, `.gradle/`), including `buildSrc/` and the parent `settings.gradle.kts`:
 
-- Modify Gradle files. The verdict drives recommendations; any Gradle change is delegated to `rules/gradle-build.md`.
-- Assume a specific toolchain. Detect, then report.
-- Treat absence as failure — "no Avro setup" is a valid verdict.
+| Target | Pattern |
+|---|---|
+| Codegen plugin | `davidmc24` · `kafka-schema-registry-gradle-plugin` · `avro4k`/`avrohugger` |
+| Registry SDK | `io.confluent:kafka-avro-serializer`/`kafka-schema-registry-client` · `io.apicurio:apicurio-registry-serdes-avro-serde` |
+| Spring config | `schema.registry.url`, `specific.avro.reader` · `apicurio.registry.url`, `apicurio.registry.auto-register` (in `*.yaml`/`*.properties`, capture file:line per profile) |
+| Existing schemas | `find … \( -name '*.avsc' -o -name '*.avdl' \)`, grouped by owning module, with each file's `namespace` |
 
-## Steps
+**Report all matches, not the first.** A project mixing davidmc24 (production `SpecificRecord`) with avro4k (test DTOs) is legitimate — the recommendation follows whatever produces the production DTOs. Both registry SDKs present is a WARNING: two registries, verify it's intentional. A private fork under a different group id reports as `custom` with its file:line so the caller can ask.
 
-- [ ] **Step 1: Detect the Avro Gradle plugin**
+## Verdict
 
-```bash
-# davidmc24 plugin (default recommendation)
-grep -rE 'com\.github\.davidmc24\.gradle\.plugin\.avro|"com\.github\.davidmc24"|davidmc24' \
-  --include='*.gradle.kts' --include='*.gradle' --include='libs.versions.toml' \
-  --exclude-dir=build --exclude-dir=.gradle \
-  . 2>/dev/null
+Emit JSON the caller can parse — `toolchain` (primary, version, config file:line, alternates), `registry` (vendor, coordinates, config files, URL per profile), `schemas` (count, files, namespaces), and `recommendation` (null when a toolchain exists) — plus a one-paragraph summary.
 
-# Confluent gradle-schema-registry-plugin (registry-aware tasks: registerSchemas, testSchemasTask)
-grep -rE 'io\.confluent\.gradle-schema-registry|"com\.github\.imflog\.kafka-schema-registry-gradle-plugin"' \
-  --include='*.gradle.kts' --include='*.gradle' --include='libs.versions.toml' \
-  --exclude-dir=build --exclude-dir=.gradle \
-  . 2>/dev/null
+With no plugin configured, recommend `com.github.davidmc24.gradle.plugin.avro` (widest use; emits `SpecificRecord` that Kotlin consumes cleanly) and name the registry SDK matching the deployment target.
 
-# avro4k / avrohugger (Kotlin-native data-class generation)
-grep -rE 'avro4k|com\.github\.thake\.avro4k|com\.julianpeeters.*avrohugger|sbt-avrohugger' \
-  --include='*.gradle.kts' --include='*.gradle' --include='libs.versions.toml' \
-  --exclude-dir=build --exclude-dir=.gradle \
-  . 2>/dev/null
-```
-
-If MORE than one plugin matches: surface ALL of them in the verdict — projects sometimes mix davidmc24 (for Java SpecificRecord) with avro4k (for Kotlin DTOs in tests). The recommendation defaults to whatever already produces the production DTOs.
-
-- [ ] **Step 2: Detect the Schema Registry SDK**
-
-```bash
-# Confluent Schema Registry SDK
-grep -rE 'io\.confluent:kafka-avro-serializer|io\.confluent:kafka-schema-registry-client|io\.confluent\.kafka\.schemaregistry' \
-  --include='*.gradle.kts' --include='*.gradle' --include='libs.versions.toml' --include='*.kt' \
-  --exclude-dir=build --exclude-dir=.gradle \
-  . 2>/dev/null
-
-# Apicurio Registry SDK
-grep -rE 'io\.apicurio:apicurio-registry-serdes-avro-serde|io\.apicurio:apicurio-registry-client|apicurio\.registry' \
-  --include='*.gradle.kts' --include='*.gradle' --include='libs.versions.toml' --include='*.kt' --include='*.yaml' --include='*.yml' \
-  --exclude-dir=build --exclude-dir=.gradle \
-  . 2>/dev/null
-```
-
-If both are present, the project is talking to two different registries — emit a WARNING in the verdict ("dual registry configuration; verify intentional").
-
-- [ ] **Step 3: Detect existing schema files**
-
-```bash
-# .avsc and .avdl across all modules
-find . -path ./build -prune -o -path ./.gradle -prune -o \
-  \( -name '*.avsc' -o -name '*.avdl' \) -print 2>/dev/null
-```
-
-Group by module (the closest ancestor containing `build.gradle.kts`). Note the namespace from each file's `"namespace"` field. Useful for later steps that need to know "where do new schemas go?".
-
-- [ ] **Step 4: Detect Spring Boot registry config**
-
-```bash
-# Confluent shape
-grep -rnE 'schema\.registry\.url|spring\.kafka\.properties\.schema|specific\.avro\.reader' \
-  --include='*.yaml' --include='*.yml' --include='*.properties' \
-  --exclude-dir=build \
-  . 2>/dev/null
-
-# Apicurio shape
-grep -rnE 'apicurio\.registry\.url|apicurio\.registry\.auto-register' \
-  --include='*.yaml' --include='*.yml' --include='*.properties' \
-  --exclude-dir=build \
-  . 2>/dev/null
-```
-
-Capture file:line for every match. The audit and `/avro-evolve` commands read these.
-
-- [ ] **Step 5: Emit the verdict**
-
-```json
-{
-  "service": "<service-name>",
-  "toolchain": {
-    "primary": "davidmc24",
-    "version": "1.9.1",
-    "config_file": "build.gradle.kts:42",
-    "alternates_present": []
-  },
-  "registry": {
-    "vendor": "confluent",
-    "sdk_coordinates": "io.confluent:kafka-avro-serializer:7.5.0",
-    "config_files": [
-      "boot/src/main/resources/application.yaml:18",
-      "boot/src/main/resources/application-prod.yaml:6"
-    ],
-    "url_per_profile": {
-      "default": "${SCHEMA_REGISTRY_URL:http://localhost:8081}",
-      "prod":    "${SCHEMA_REGISTRY_URL}"
-    }
-  },
-  "schemas": {
-    "count": 4,
-    "files": [
-      "adapters/inbound/orders/src/main/avro/com/acme/orders/events/v1/OrderCreatedV1.avsc",
-      "adapters/inbound/orders/src/main/avro/com/acme/orders/events/v1/OrderCancelledV1.avsc"
-    ],
-    "namespaces": ["com.acme.orders.events.v1"]
-  },
-  "recommendation": null
-}
-```
-
-If no Avro plugin is configured, set `toolchain.primary = "none"` and populate `recommendation`:
-
-```json
-"recommendation": {
-  "toolchain": "com.github.davidmc24.gradle.plugin.avro",
-  "rationale": "Most widely used; emits Java SpecificRecord which is consumed cleanly from Kotlin.",
-  "registry":  "io.confluent:kafka-avro-serializer (or io.apicurio:apicurio-registry-serdes-avro-serde if the deployment target uses Apicurio)",
-  "next_step": "Delegate the Gradle edit to the Gradle build rules (core) and re-run this skill."
-}
-```
-
-If no registry SDK is configured but the project has Avro schemas, surface "local-only codegen" — the project is using Avro as a contract format but not registering schemas. That's valid for some setups (file-system schema sharing) but worth flagging.
-
-## Output
-
-JSON verdict (above) + a one-paragraph markdown summary for the calling agent. The agent uses the verdict to:
-
-- Decide where to place new `.avsc` files (matches existing `namespaces`).
-- Decide which Gradle plugin's config block to recommend (matches `toolchain.primary`).
-- Decide which Spring config snippet to surface in `/avro-new-event` (matches `registry.vendor`).
-- Decide whether to emit a "no toolchain configured — delegate to the Gradle build rules" prompt.
-
-## Notes
-
-- The skill does not run Gradle. Detection is purely file-system + grep — fast, idempotent, safe.
-- For projects using a `buildSrc/` convention plugin or a parent `settings.gradle.kts`, search those too.
-- The skill ignores anything under `build/`, `.gradle/`, `node_modules/`, or `.idea/`.
-- If the project uses a private fork of one of the plugins (different group ID), surface it as `toolchain.primary = "custom"` with the file:line so the calling agent can ask the user.
+Schemas present but no registry SDK is **local-only codegen** — valid for file-system schema sharing, but worth flagging.

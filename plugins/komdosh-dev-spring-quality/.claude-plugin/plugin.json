@@ -1,8 +1,8 @@
 {
   "name": "komdosh-dev-spring-quality",
   "displayName": "Kotlin + Spring Quality",
-  "version": "0.3.0",
-  "description": "The audit and QA-artifact suite on top of komdosh-dev-spring-core. 5 agents \u2014 security-auditor (route\u2194SecurityWebFilterChain coverage, RFC 9457 error leakage, JWT/JWK rotation, PII on the data-in-motion surface), platform-developer (vendor-coupling leaks in application/ and domain/, staged into a common/ module), and three QA writers (qa-plan-writer, qa-postman-writer, qa-console-writer) \u00b7 7 commands \u2014 /qa [plan|postman|console|all] from one shared API-surface discovery, /security-audit plus its four narrowed entry points (/auth-audit, /error-leakage-check, /jwt-rotation, /pii-leakage-check), and /audit-leaks \u00b7 4 skills \u00b7 2 rules. Read-only on the audit side: never modifies code, never extracts secrets, never prints personal data. Requires komdosh-dev-spring-core.",
+  "version": "0.4.0",
+  "description": "Audits and QA artifacts on top of spring-core. Finds out what is actually true about a finished service: which routes are unauthenticated, what leaks through error bodies, whether JWT validation is real, where personal data escapes in logs and events, and which vendor types have leaked into application code. Also generates the QA artifacts a human tester needs — a validation checklist, a Newman-runnable Postman collection, and a self-contained HTML console — from one API-surface discovery. Read-only on the audit side: never edits, never extracts a secret, never prints personal data. Requires komdosh-dev-spring-core.",
   "author": {
     "name": "Andrey Tabakov",
     "email": "ave.tabakov@gmail.com",

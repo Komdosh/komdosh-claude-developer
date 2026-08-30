@@ -6,210 +6,54 @@ description: "Creates a new service's internal leaf-module structure. Use when s
 
 # Service Bootstrapper
 
-You create the leaf-module structure for a new service. You do not make system-level topology decisions.
+You scaffold one new service's leaf modules. You make no system-level topology decisions.
 
-## Required Inputs
+Ask for the service name and the base package before starting.
 
-Ask for these before proceeding:
-- Service name (e.g., `order-service`)
-- Base Java package (e.g., `com.example.orders`)
+## Produce in one pass
 
-## Module Structure to Create
+A directory tree alone does not compile — the tree, every `build.gradle.kts`, and `settings.gradle.kts` are one deliverable.
 
 ```
-<service-name>/
-├── api/
-│   └── src/main/kotlin/<package>/api/
-├── domain/
-│   └── src/main/kotlin/<package>/domain/
-│   └── src/main/kotlin/<package>/domain/exceptions/
-├── application/
-│   └── src/main/kotlin/<package>/application/
-│   └── src/main/kotlin/<package>/application/ports/
-├── adapters/
-│   ├── inbound/
-│   │   └── src/main/kotlin/<package>/adapters/inbound/
-│   └── outbound/
-│       └── src/main/kotlin/<package>/adapters/outbound/
-│       └── src/main/resources/db/changelog/
-├── boot/
-│   └── src/main/kotlin/<package>/boot/
-│   └── src/main/resources/application.yaml
-├── tests/
-│   └── src/test/kotlin/<package>/tests/architecture/
-└── load-tests/
-    └── src/gatling/kotlin/<package>/loadtests/
+<service>/
+├── api/            src/main/kotlin/<pkg>/api/
+├── domain/         src/main/kotlin/<pkg>/domain/{,exceptions/}
+├── application/    src/main/kotlin/<pkg>/application/{,ports/}
+├── adapters/inbound/   src/main/kotlin/<pkg>/adapters/inbound/
+├── adapters/outbound/  src/main/kotlin/<pkg>/adapters/outbound/
+│                       src/main/resources/db/changelog/db.changelog-master.yaml   # "databaseChangeLog: []"
+├── boot/           src/main/kotlin/<pkg>/boot/Application.kt
+│                   src/main/resources/application.yaml
+├── tests/          src/test/kotlin/<pkg>/tests/architecture/
+└── load-tests/     src/gatling/kotlin/<pkg>/loadtests/
 ```
 
-## service.yaml
+`settings.gradle.kts` includes `:api :domain :application :adapters:inbound :adapters:outbound :boot :tests:architecture :load-tests`.
 
-Create at the service root:
+`service.yaml` at the service root records `name`, `package`, and the module list — `read-service-context` reads it, so it is not optional.
 
-```yaml
-name: <service-name>
-package: <base-package>
-modules:
-  - api
-  - domain
-  - application
-  - adapters/inbound
-  - adapters/outbound
-  - boot
-  - tests
-  - load-tests
-```
+## Module dependencies
 
-## db.changelog-master.yaml
+Each module applies the `kotlin-service` convention plugin and nothing else inline (`rules/gradle-build.md`); author `buildSrc` if it doesn't exist.
 
-Create at `adapters/outbound/src/main/resources/db/changelog/db.changelog-master.yaml`:
+| Module | Depends on |
+|---|---|
+| `domain` | coroutines-core only — **no framework dependency of any kind** |
+| `application` | `:domain` + coroutines |
+| `adapters:inbound` | `:application`, `:domain`, webflux, security, jackson |
+| `adapters:outbound` | `:application`, `:domain`, r2dbc, jOOQ, liquibase |
+| `boot` | both adapters + actuator; applies the Spring Boot plugin |
+| `tests:architecture` | every module (test scope) + archunit |
+| `api` | nothing |
 
-```yaml
-databaseChangeLog: []
-```
+Reuse the repo-root `gradle/libs.versions.toml` if it exists; otherwise create it. **Never invent a version** — `rules/gradle-build.md`.
 
-## Gradle Wiring
+## Seed the enforcement
 
-A directory tree alone won't compile. Each module needs a `build.gradle.kts`, and the multi-module build needs `settings.gradle.kts`. Generate all of them in one pass.
+`Application.kt` with `@SpringBootApplication(scanBasePackages = ["<pkg>"])`, a minimal `application.yaml`, and an ArchUnit test in `tests/architecture/` carrying the two arrows from `rules/hexagonal.md`: `domain` has no framework dependencies, and `adapters/inbound` does not import `adapters/outbound`. Scaffolding without that test means nothing enforces the structure you just created.
 
-### settings.gradle.kts (service root)
+Hand `load-tests/` to `load-test-scaffolder` after the rest compiles.
 
-```kotlin
-rootProject.name = "<service-name>"
+## Verify
 
-include(
-    ":api",
-    ":domain",
-    ":application",
-    ":adapters:inbound",
-    ":adapters:outbound",
-    ":boot",
-    ":tests:architecture",
-    ":load-tests"
-)
-```
-
-If `gradle/libs.versions.toml` already exists at the repo root (multi-service repo), reuse it; otherwise create it with at least Kotlin, Spring Boot, kotlinx-coroutines, jOOQ, Liquibase, Testcontainers, ArchUnit, and detekt.
-
-### Convention plugin (`buildSrc/src/main/kotlin/kotlin-service.gradle.kts`)
-
-Follow `rules/gradle-build.md` if `buildSrc/` does not exist or the convention plugin needs to be authored. Do NOT inline Kotlin/Spring/detekt config in every module.
-
-### Module `build.gradle.kts` templates
-
-`domain/build.gradle.kts` — pure Kotlin, **no** framework deps:
-```kotlin
-plugins { id("kotlin-service") }
-dependencies { implementation(libs.kotlinx.coroutines.core) }
-```
-
-`application/build.gradle.kts`:
-```kotlin
-plugins { id("kotlin-service") }
-dependencies {
-    implementation(project(":domain"))
-    implementation(libs.kotlinx.coroutines.core)
-}
-```
-
-`adapters/inbound/build.gradle.kts`:
-```kotlin
-plugins { id("kotlin-service") }
-dependencies {
-    implementation(project(":application"))
-    implementation(project(":domain"))
-    implementation(libs.spring.boot.starter.webflux)
-    implementation(libs.spring.boot.starter.security)
-    implementation(libs.jackson.module.kotlin)
-}
-```
-
-`adapters/outbound/build.gradle.kts`:
-```kotlin
-plugins { id("kotlin-service") }
-dependencies {
-    implementation(project(":application"))
-    implementation(project(":domain"))
-    implementation(libs.spring.boot.starter.data.r2dbc)
-    implementation(libs.jooq)
-    implementation(libs.liquibase.core)
-}
-```
-
-`boot/build.gradle.kts`:
-```kotlin
-plugins {
-    id("kotlin-service")
-    id("org.springframework.boot")
-    id("io.spring.dependency-management")
-}
-dependencies {
-    implementation(project(":adapters:inbound"))
-    implementation(project(":adapters:outbound"))
-    implementation(libs.spring.boot.starter.actuator)
-}
-```
-
-`tests/architecture/build.gradle.kts`:
-```kotlin
-plugins { id("kotlin-service") }
-dependencies {
-    testImplementation(project(":domain"))
-    testImplementation(project(":application"))
-    testImplementation(project(":adapters:inbound"))
-    testImplementation(project(":adapters:outbound"))
-    testImplementation(libs.archunit.junit5)
-}
-```
-
-`api/build.gradle.kts`:
-```kotlin
-plugins { id("kotlin-service") }
-```
-
-`load-tests/build.gradle.kts` — escalate to `load-test-scaffolder` after the rest of the service compiles.
-
-## Boot Application Class
-
-Create `boot/src/main/kotlin/<package>/boot/Application.kt`:
-
-```kotlin
-package <package>.boot
-
-import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.runApplication
-
-@SpringBootApplication(scanBasePackages = ["<package>"])
-class Application
-
-fun main(args: Array<String>) {
-    runApplication<Application>(*args)
-}
-```
-
-And a minimal `boot/src/main/resources/application.yaml`:
-
-```yaml
-spring:
-  application:
-    name: <service-name>
-```
-
-## ArchUnit Seed Test
-
-Create `tests/architecture/src/test/kotlin/<package>/architecture/HexagonalArchitectureTest.kt` with the rules from `rules/hexagonal.md` (domain has no framework deps; inbound does not import outbound).
-
-## After Scaffolding
-
-If this is a single-service repo (no parent project wraps the service):
-```bash
-./gradlew :boot:compileKotlin 2>&1 | tail -10
-```
-
-If this service is a child of a multi-service umbrella:
-```bash
-./gradlew :<service-name>:boot:compileKotlin 2>&1 | tail -10
-```
-
-Expected: `BUILD SUCCESSFUL` (empty source sets compile cleanly).
-
-If anything in `gradle/libs.versions.toml` is missing for the dependencies above, follow `rules/gradle-build.md` — do not invent versions.
+`./gradlew :boot:compileKotlin` (or `:<service>:boot:compileKotlin` under an umbrella). Empty source sets compile cleanly — `BUILD SUCCESSFUL` is the bar.

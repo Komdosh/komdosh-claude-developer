@@ -5,62 +5,14 @@ description: "Run narrowest-first Gradle verification after code changes: target
 
 # Run Verification
 
-## When to Use
+Run after **any** code change, before reporting done — including changes that look trivial.
 
-Use this skill after **any code change** before reporting the task as done.
-Run it even if you believe the change is trivial — Gradle catches type errors and detekt catches style issues the agent misses.
+Three steps, narrowest first. Convert paths to Gradle notation (`adapters/outbound` → `:adapters:outbound`).
 
-## Do NOT
+1. `./gradlew :<module>:test --tests "<FQCN>"` — or the whole module's tests when no specific class changed.
+2. `./gradlew :boot:compileKotlin` — catches wiring errors that unit tests never see.
+3. `./gradlew :<module>:detekt`
 
-- Skip any step because an earlier step passed.
-- Report success before all three steps have returned `BUILD SUCCESSFUL`.
-- Run `./gradlew build` when a narrower task will do — it rebuilds everything unnecessarily.
+**Never skip a later step because an earlier one passed**, and never run `./gradlew build` when a narrower target works. On a failure, read the full output, diagnose, fix, and re-run from that step.
 
-## Steps
-
-- [ ] **Step 1: Identify affected module(s)**
-
-From the edited file paths, determine which Gradle module(s) were touched.
-Convert directory path to Gradle notation: `adapters/outbound` → `:adapters:outbound`
-
-- [ ] **Step 2: Run the narrowest test target**
-
-If a specific test class was added or modified:
-```bash
-./gradlew :<module>:test --tests "<FullyQualifiedClassName>" -i 2>&1 | tail -40
-```
-
-If no specific test class:
-```bash
-./gradlew :<module>:test 2>&1 | tail -30
-```
-
-Expected: `BUILD SUCCESSFUL`
-If FAILED: read the full failure output, diagnose, fix, then re-run before proceeding.
-
-- [ ] **Step 3: Run the boot compile check**
-
-```bash
-./gradlew :boot:compileKotlin 2>&1 | tail -20
-```
-
-Expected: `BUILD SUCCESSFUL`
-This catches wiring errors in `boot/` that unit tests won't.
-
-- [ ] **Step 4: Run detekt on affected module(s)**
-
-```bash
-./gradlew :<module>:detekt 2>&1 | tail -20
-```
-
-Expected: `BUILD SUCCESSFUL`
-If violations are listed: fix them or report them explicitly (don't silently ignore).
-
-- [ ] **Step 5: Report result**
-
-State clearly:
-- Tests: PASS / FAIL (list failing test names)
-- Compile: SUCCESS / FAILURE
-- Detekt: CLEAN / N violations (list them)
-
-Only report the task as done if all three are green.
+Report tests / compile / detekt separately with the failing names or violations. **The task is done only when all three return `BUILD SUCCESSFUL`** — report anything less as the failure it is.

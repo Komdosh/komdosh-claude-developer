@@ -1,53 +1,16 @@
-# /review [--focus dim1,dim2,...]
+---
+description: Review the current diff with the code-reviewer agent across correctness, contract hygiene, observability, abstraction quality, and future-proofing.
+argument-hint: "[--focus dim1,dim2]"
+---
 
-Review the current diff with `code-reviewer` at `scope=diff`.
+# /review
 
-For a whole-service pre-production audit rather than a diff, use `/service-health` (the same agent at `scope=service`).
+`code-reviewer` at `scope=diff`. For a whole-service readiness audit instead, use `/service-health` (same agent, `scope=service`).
 
-## Usage
+Dimensions for `--focus`: `correctness`, `contract-hygiene`, `observability`, `abstraction-quality`, `future-proofing`.
 
-```
-/review
-/review --focus correctness,abstraction-quality
-/review --focus contract-hygiene,observability
-```
-
-Valid dimensions: `correctness`, `contract-hygiene`, `observability`, `abstraction-quality`, `future-proofing`
-
-## Steps
-
-- [ ] **Step 1: Confirm the base branch, then get the diff**
-
-The base is usually `main` in this repo; confirm it if the branch flow is unclear rather than assuming.
-
-```bash
-git diff main...HEAD
-```
-
-If empty, check staged changes:
-
-```bash
-git diff --cached
-```
-
-If both are empty: "No changes to review. Make or stage some changes first." Stop.
-
-- [ ] **Step 2: Identify affected modules**
-
-From the diff paths, list the Gradle modules changed.
-
-- [ ] **Step 3: Invoke `code-reviewer`**
-
-Pass `scope=diff`, the base branch, and the diff. If `--focus` was given, include it: "Focus only on: [dim1, dim2]. Skip other dimensions."
-
-- [ ] **Step 4: Run verification on the affected modules**
-
-Run the `run-verification` skill on each affected module.
-
-- [ ] **Step 5: Present findings**
-
-Findings ordered by severity — all BLOCKERs, then WARNINGs, then INFOs — followed by the verification results (tests, compile, detekt).
-
-- [ ] **Step 6: Conclude**
-
-End with the agent's recommendation: `MERGE` / `FIX BLOCKERS FIRST (N blockers)` / `DO NOT MERGE`, and its stated evidence for anything it called clean.
+1. Confirm the base branch rather than assuming, then `git diff <base>...HEAD` — falling back to `git diff --cached`. Both empty → say so and stop.
+2. Invoke `code-reviewer` with `scope=diff`, the base, and any `--focus`.
+3. Run `run-verification` on the affected modules.
+4. Present findings severity-ordered, then the verification results.
+5. Close with the agent's recommendation and **its stated evidence for anything it called clean**.

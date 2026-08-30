@@ -7,99 +7,54 @@ description: Locate service.yaml (or fallback docs/README.md), read module struc
 
 # Read Service Context
 
-## When to Use
+Orients to a consumer service. **Run once per session** — do not re-run if the context was already emitted.
 
-Use this skill when:
-- You need the service name, base package, or module layout before writing code.
-- You're starting a fresh sub-task and need to orient yourself.
+## 1. Metadata
 
-Do NOT re-run this skill if service context was already emitted in the current session.
-
-## Steps
-
-- [ ] **Step 1: Check for service.yaml**
+`service.yaml` / `service.yml` if present — take `name`, `package`, `modules`, and `kind`. Otherwise `docs/README.md`, otherwise discover from the filesystem:
 
 ```bash
-if [[ -f service.yaml ]]; then cat service.yaml; elif [[ -f service.yml ]]; then cat service.yml; fi
+find . -name "build.gradle.kts" -not -path "*/build/*" -not -path "*/.gradle/*" \
+  | sed 's|/build.gradle.kts||;s|^\./||' | sort
 ```
 
-If found: extract `name`, `package`, `modules`, and **`kind`** (optional — `service` or `library`) from the file. Proceed to Step 4.
+## 2. Base package
 
-- [ ] **Step 2: Fallback — check docs/README.md**
-
-```bash
-[[ -f docs/README.md ]] && head -80 docs/README.md
-```
-
-If found: read the service name and package from the README header.
-
-- [ ] **Step 3: Discover module structure from filesystem**
+Sample several files and take the most common prefix — **the first file alone is unreliable** (license headers, generated code, jOOQ records):
 
 ```bash
-find . -name "build.gradle.kts" \
-  -not -path "*/build/*" \
-  -not -path "*/.gradle/*" \
-  | sed 's|/build.gradle.kts||' \
-  | sed 's|^\./||' \
-  | sort
-```
-
-- [ ] **Step 4: Extract base package name**
-
-Read up to 5 candidate files and pick the most common package prefix — relying on the *first* file is fragile (license headers, generated code, jOOQ records, etc.):
-
-```bash
-find . -name "*.kt" -path "*/main/*" \
-  -not -path "*/build/*" -not -path "*/generated/*" \
-  | head -5 \
-  | xargs grep -h '^package ' 2>/dev/null \
-  | awk '{print $2}' \
+find . -name "*.kt" -path "*/main/*" -not -path "*/build/*" -not -path "*/generated/*" \
+  | head -5 | xargs grep -h '^package ' | awk '{print $2}' \
   | sort | uniq -c | sort -rn | head -3
 ```
 
-Take the longest common prefix of the listed packages as the service's base package. If results conflict, ask the user.
+Take the longest common prefix; ask the user if the results conflict.
 
-- [ ] **Step 5: Determine `kind` (service | library)**
+## 3. `kind` — the marketplace's single track-detection point
 
-If `service.yaml` declared `kind`, use it. Otherwise infer from build:
+Use `service.yaml`'s `kind` if declared. Otherwise infer:
 
 ```bash
-# Recursive grep across all build.gradle.kts files — multi-module Gradle repos apply plugins per-module, not at the root.
-# `|| true` after each pipeline so a no-match grep doesn't abort under `set -e -o pipefail`.
-has_publish=$(grep -rlE 'maven-publish|`maven-publish`' --include='build.gradle.kts' \
-                --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
-has_boot=$(grep -rlE 'org\.springframework\.boot|spring-boot' --include='build.gradle.kts' \
-             --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
-# Match runApplication<...>(...) directly — services name files <ServiceName>Application.kt, not literally Application.kt.
+# `runApplication<` is the strongest signal — it appears only in Spring Boot apps, and services
+# name the file <ServiceName>Application.kt, not literally Application.kt.
+# Grep recursively: multi-module repos apply plugins per module, not at the root.
+# `|| true` on each pipeline so a no-match doesn't abort under `set -e -o pipefail`.
 has_app=$(grep -rl 'runApplication<' --include='*.kt' \
-           --exclude-dir=build --exclude-dir=test --exclude-dir='.gradle' \
-           . 2>/dev/null | head -1 || true)
-has_dockerfile=$(find . -maxdepth 3 -name 'Dockerfile' -not -path '*/build/*' 2>/dev/null | head -1 || true)
+           --exclude-dir=build --exclude-dir=test --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
+has_publish=$(grep -rlE 'maven-publish' --include='build.gradle.kts' \
+                --exclude-dir=build --exclude-dir='.gradle' . 2>/dev/null | head -1 || true)
 
-# `runApplication<>` is the strongest signal — only appears in Spring Boot apps. `has_boot` is informational
-# (often applied via buildSrc convention plugins, so missing from service build.gradle.kts).
-if   [ -n "$has_app" ];                              then kind="service"
-elif [ -n "$has_publish" ] && [ -z "$has_app" ];     then kind="library"
-else                                                       kind="unknown"
+if   [ -n "$has_app" ];     then kind="service"
+elif [ -n "$has_publish" ]; then kind="library"
+else                             kind="unknown"
 fi
 ```
 
-If `kind == unknown`, do NOT block — emit `unknown` and let the caller decide whether to ask the user. Many internal tools and code samples are neither service nor library and don't need the field.
+A Spring Boot plugin match alone is **not** a signal — it is usually applied via a `buildSrc` convention plugin and so absent from the service's own `build.gradle.kts`.
 
-- [ ] **Step 6: Summarize findings**
+`unknown` never blocks: emit it and let the caller decide. Plenty of repos are neither.
 
-State in one paragraph:
-- Service name
-- Base Java package
-- `kind` — service | library | unknown
-- Module list (from discovery)
-- Any gaps (e.g., no service.yaml found — suggest creating one with `kind:` set so the release plugin and other consumers don't have to re-detect)
-
-Use this summary to inform all subsequent actions in the session.
-
-### Output schema
-
-The skill emits a single block other skills/agents can parse:
+## 4. Emit
 
 ```yaml
 service:
@@ -109,3 +64,5 @@ service:
   modules: [domain, application, adapters/inbound, adapters/outbound, boot]
   source: service.yaml | docs/README.md | filesystem-discovery
 ```
+
+If `service.yaml` is missing, say so and suggest creating one with `kind:` set, so downstream consumers don't each re-detect.

@@ -7,15 +7,15 @@ description: Read-only probe of a live ArgoCD Application's sync and health stat
 
 # Probe App Health
 
-Gather the read-only evidence a sync/health diagnosis needs. **Never** mutates ArgoCD or the cluster — only `argocd app get/diff/history` and `kubectl get/describe`. Track as a todo when invoked.
+Gather the read-only evidence a sync/health diagnosis needs. **Never** mutates ArgoCD or the cluster — only `argocd app get/diff/history` and `kubectl get/describe`.
 
-## Step 0: Confirm reachability and target
+## 0. Confirm reachability and target
 
 - Try `argocd app get <app> -o json` (CLI authenticated) or read the `Application` CR via `kubectl get application <app> -n argocd -o yaml`.
 - Confirm which ArgoCD instance / cluster you're looking at before probing prod.
 - Neither reachable → set `reachable: false`, stop, and tell the caller to reason from the git manifests (`discover-argocd-apps`) plus the symptoms given.
 
-## Step 1: Sync and health headline
+## 1. Sync and health headline
 
 From `argocd app get` (or the CR `status`):
 
@@ -23,25 +23,25 @@ From `argocd app get` (or the CR `status`):
 - **health.status**: Healthy / Progressing / Degraded / Missing / Suspended.
 - Remember these are independent: **Synced + Degraded** = git applied but resources unhealthy; **OutOfSync + Healthy** = working but diverged from git.
 
-## Step 2: What is out of sync / unhealthy
+## 2. What is out of sync / unhealthy
 
 - `status.resources[]` — per-resource sync + health; list the specific resources that are OutOfSync or Degraded (kind/name/namespace).
 - `argocd app diff <app>` (read-only) — the actual difference between git desired state and live state; this is the drift, concretely. **Redact any secret values** in the diff — never print them.
 
-## Step 3: Why the last operation failed
+## 3. Why the last operation failed
 
 - `status.operationState` — phase (Running/Succeeded/Failed/Error), message, and `syncResult` per resource (the exact apply error: a schema rejection, an immutable-field conflict, a hook failure, an RBAC/AppProject denial).
 - `status.conditions[]` — SyncError, ComparisonError, OrphanedResource, and warnings.
 
-## Step 4: Resource-level cause for Degraded
+## 4. Resource-level cause for Degraded
 
-- For a Degraded app, drill into the failing workload with `kubectl describe`/`get` (read-only) — the app is Degraded because a pod/Service/Ingress underneath is unhealthy. (Deep workload diagnosis is `k8s-diagnostician`'s job if the kubernetes plugin is installed.)
+- For a Degraded app, drill into the failing workload with `kubectl describe`/`get` (read-only) — the app is Degraded because a pod/Service/Ingress underneath is unhealthy. Deep workload diagnosis is `k8s-diagnostician`'s job.
 
-## Step 5: Recent history
+## 5. Recent history
 
 - `argocd app history <app>` — recent synced revisions, to know what "the previous good state" was for a git-revert rollback.
 
-## Step 6: Return the evidence bundle
+## 6. Return the evidence bundle
 
 ```json
 {

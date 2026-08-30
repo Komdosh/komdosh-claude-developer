@@ -7,14 +7,14 @@ description: Inventory ArgoCD resources into a structured descriptor — Applica
 
 # Discover ArgoCD Apps
 
-Map the ArgoCD delivery layer so downstream work fits the existing app structure and project scoping. Read-only. Track as a todo when invoked.
+Map the ArgoCD delivery layer so downstream work fits the existing app structure and project scoping. Read-only.
 
-## Step 1: Find the ArgoCD resources in git
+## 1. Find the ArgoCD resources in git
 
 - Glob YAML for `kind: Application`, `kind: ApplicationSet`, `kind: AppProject` under `argoproj.io`.
 - Identify the **app-of-apps root** (an Application whose `source.path` is a directory of other Applications) if present.
 
-## Step 2: Per-Application facts
+## 2. Per-Application facts
 
 For each Application record:
 
@@ -26,25 +26,25 @@ For each Application record:
 - **ignoreDifferences**: present and how broad (a wide ignore hides real drift).
 - Any **secret value inline** in the app or its tracked values (route to `secrets-sentinel`).
 
-## Step 3: ApplicationSets
+## 3. ApplicationSets
 
 - Generator type (list / git / cluster / matrix / pull-request) and what it fans out over.
 - The template's per-env `targetRevision` — are prod-generated apps pinned while non-prod track a branch?
 
-## Step 4: AppProjects — the guardrails
+## 4. AppProjects — the guardrails
 
 For each project: `sourceRepos`, `destinations`, `clusterResourceWhitelist`/blacklist, `namespaceResourceBlacklist`. Flag `*` in sourceRepos or destinations (defeats scoping).
 
-## Step 5: Sync waves & environments
+## 5. Sync waves & environments
 
 - Map `argocd.argoproj.io/sync-wave` annotations to see rollout ordering (CRDs/namespaces/operators before workloads).
 - Map apps to environments and confirm prod/non-prod separation (distinct projects/namespaces/clusters).
 
-## Step 6: (Optional) live view
+## 6. (Optional) live view
 
 If the `argocd` CLI is authenticated, `argocd app list` / `argocd proj list` read-only to reconcile git with what's actually registered. If not authenticated, skip — never assume live state.
 
-## Step 7: Return the descriptor
+## 7. Return the descriptor
 
 ```json
 {

@@ -6,120 +6,35 @@ description: Grep-based fast preflight that imports across modules respect the h
 
 # Module Boundary Check
 
-## When to Use
+Enforces `rules/hexagonal.md` and `rules/domain-purity.md`. Run after editing anything under `domain/`, `application/`, `adapters/`, or `boot/`, **before** `run-verification`. **The ArchUnit suite in `tests/architecture/` remains the authoritative check** — this is the fast per-line preflight.
 
-Run after editing any Kotlin file under:
+Only `^import` lines are matched, so a fully-qualified use inside a body is not caught here; detekt's `ForbiddenImport` is the complementary check.
 
-- `domain/`
-- `application/`
-- `adapters/inbound/`
-- `adapters/outbound/`
-- `boot/`
+## 1. Scope
 
-**Before** `run-verification` — this skill takes a few seconds and gives you per-line errors. The full ArchUnit suite under `tests/architecture/` is the source of truth, but it runs in tens of seconds and gives less helpful messages.
-
-This skill enforces [`rules/hexagonal.md`](../../rules/hexagonal.md) (dependency direction) and [`rules/domain-purity.md`](../../rules/domain-purity.md) (banned imports in `domain/` / `application/`).
-
-## Output
-
-Per violation:
-
-```
-[<rule>] BLOCKER <file>:<line>
-  import <offending-package>
-  Why: <one-line rationale>
-```
-
-Plus the summary line:
-
-```
-Module boundary: <CLEAN | N violations>
-```
-
-## Steps
-
-- [ ] **Step 1: Determine scope**
-
-If the calling agent supplied a list of touched files, use those (filtered to `*.kt` under the four module dirs). Otherwise, scan files modified relative to the merge base:
+Caller's touched files, or the merge-base diff filtered to the module roots:
 
 ```bash
 git merge-base HEAD origin/main 2>/dev/null \
   | xargs -I{} git diff --name-only {}..HEAD -- '*.kt' \
-  | grep -E '^(domain|application|adapters/(inbound|outbound)|boot)/'
+  | grep -E '^(domain|application|adapters/(inbound|outbound)|boot)/' || true
 ```
 
-- [ ] **Step 2: Apply per-module banned-import checks**
+## 2. Checks
 
-```bash
-files_in() { printf '%s\n' "${@}" | grep -E "^$1/" || true; }
+| Rule | Module | Flag |
+|---|---|---|
+| DP-1 | `domain/` | `^import (org\.springframework\|org\.jooq\|org\.apache\.kafka\|io\.r2dbc\|com\.fasterxml\.jackson\|jakarta\.persistence)\.` |
+| DP-2 | `application/` | same set, **minus** `org.springframework.transaction` — tolerated only as a fallback where `TransactionalOperator` isn't available (`rules/persistence.md`) |
+| HX-1 | `adapters/inbound/` | `^import .*\.adapters\.outbound\.` — go through `application/ports/` |
+| HX-2 | `adapters/outbound/` | `^import .*\.adapters\.inbound\.` — that direction is a feedback loop |
+| HX-3 | `domain/` | `^import .*\.(application\|adapters\|boot)\.` — nothing flows inward |
+| HX-4 | `application/` | `^import .*\.(adapters\|boot)\.` — use cases don't depend on implementations |
 
-# [DP-1] domain/ — no framework imports at all
-for f in $(files_in domain "${touched[@]}"); do
-  grep -nE '^import (org\.springframework|org\.jooq|org\.apache\.kafka|io\.r2dbc|com\.fasterxml\.jackson|jakarta\.persistence)\.' "$f"
-done
+In a multi-service repo, scope the greps to the current service root.
 
-# [DP-2] application/ — same banned imports as domain (one tolerated exception: org.springframework.transaction)
-for f in $(files_in application "${touched[@]}"); do
-  grep -nE '^import (org\.springframework|org\.jooq|org\.apache\.kafka|io\.r2dbc|com\.fasterxml\.jackson|jakarta\.persistence)\.' "$f" \
-    | grep -v 'org\.springframework\.transaction'
-done
+## 3. Report
 
-# [HX-1] adapters/inbound/ — no imports from adapters.outbound
-for f in $(files_in adapters/inbound "${touched[@]}"); do
-  grep -nE '^import .*\.adapters\.outbound\.' "$f"
-done
+`[RULE] BLOCKER file:line` + the offending import + the one-line reason. Then `Module boundary: CLEAN (N files)` or the count.
 
-# [HX-2] adapters/outbound/ — no imports from adapters.inbound
-for f in $(files_in adapters/outbound "${touched[@]}"); do
-  grep -nE '^import .*\.adapters\.inbound\.' "$f"
-done
-
-# [HX-3] domain/ — no imports from application/, adapters/, boot/
-for f in $(files_in domain "${touched[@]}"); do
-  grep -nE '^import .*\.(application|adapters|boot)\.' "$f" \
-    | grep -v "^.*\.application\.ports\."   # domain → application.ports is allowed in some shapes; review case-by-case
-done
-
-# [HX-4] application/ — no imports from adapters/, boot/
-for f in $(files_in application "${touched[@]}"); do
-  grep -nE '^import .*\.(adapters|boot)\.' "$f"
-done
-```
-
-- [ ] **Step 3: Map each rule to a one-line rationale**
-
-| Rule | Rationale (used in the report) |
-|---|---|
-| DP-1 | `domain/` must have zero framework imports — see `rules/domain-purity.md` |
-| DP-2 | `application/` may not import jOOQ/Kafka/Jackson; only `org.springframework.transaction` is tolerated, and only as a fallback when `TransactionalOperator` is not available |
-| HX-1 | `adapters/inbound` must not call `adapters/outbound` directly — go through `application/ports/` |
-| HX-2 | `adapters/outbound` must not call `adapters/inbound` directly — that would be a feedback loop |
-| HX-3 | `domain/` is the inner core; nothing outside may flow inward |
-| HX-4 | `application/` orchestrates use cases; it must not depend on adapter implementations |
-
-- [ ] **Step 4: Report**
-
-If clean:
-
-```
-Module boundary: CLEAN (<N> files scanned).
-```
-
-Else, one line per violation per the Output format, then:
-
-```
-Module boundary: <K> violations.
-Hand back to backend-implementer or cleanuper to fix.
-The full ArchUnit suite (tests/architecture/) is the authoritative check —
-run it via `./gradlew :tests:architecture:test` after fixing.
-```
-
-- [ ] **Step 5: Do not auto-fix**
-
-Architectural fixes are usually structural (introducing a port, moving a class). Do not let any agent silently rewrite imports to bypass the rule — escalate to `backend-implementer` instead.
-
-## Notes
-
-- The grep is intentionally conservative: it only flags `^import` lines, so qualified-name uses inside the source body (rare and usually wrong anyway) are not caught here. Detekt's `ForbiddenImport` rule is a complementary check.
-- For multi-service repos, scope the grep to the current service's directory if the layout has more than one root.
-- The "tolerated exception" for `org.springframework.transaction` in DP-2 reflects real codebases. If your service uses `TransactionalOperator` exclusively (the recommended pattern from [`rules/persistence.md`](../../rules/persistence.md)), remove that exception in your local fork.
+**Never auto-fix.** These fixes are structural — introducing a port, moving a class. Rewriting an import to dodge the rule is the failure mode this exists to prevent. Escalate to `backend-implementer` and confirm with `./gradlew :tests:architecture:test`.

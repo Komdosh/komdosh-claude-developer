@@ -5,62 +5,29 @@ allowed-tools: Read, Glob, Grep, Bash(git diff:*), Bash(git status:*), Bash(git 
 description: Fast grep-based preflight over infrastructure files for the highest-signal safety violations — plaintext secrets, mutable image tags, world-open CIDRs, missing resource limits, over-broad IAM, local Terraform state, unpinned versions, and destroy/replace hazards. Runs in seconds against a diff or a tree; cheaper than a full audit or a `terraform plan`. Returns findings classified BLOCKER/WARNING/INFO with file:line. Read-only. Run before declaring any infra change done, and as the first pass inside the infra-reviewer and secrets-sentinel agents.
 ---
 
-# Infrastructure Safety Scan
+# Infra Safety Scan
 
-A seconds-long grep sweep that catches the forbidden patterns from `rules/iac-safety.md` and `rules/secrets-hygiene.md` before they reach review or apply. Not a substitute for `terraform plan`, a full audit, or the specialist auditors — it is the cheap first gate that catches the obvious, high-cost mistakes early.
+A seconds-long sweep for the forbidden patterns in `rules/iac-safety.md` and `rules/secrets-hygiene.md`, before review or apply. **Not a substitute** for a plan or a full audit — the cheap first gate that catches the expensive mistakes early.
 
-Scope to the diff when reviewing a change (`git diff` against the base branch); scope to the tree when auditing a whole repo. Track as a todo when invoked.
+Scope to the diff when reviewing a change, to the tree when auditing. **A false positive is cheap here; a miss is not** — keep patterns tight enough to stay readable, loose enough to catch.
 
-## What it scans for
+## Families
 
-### Secrets (BLOCKER)
-- Assignment-shaped secrets: `password`, `secret`, `token`, `api_key`, `access_key`, `private_key`, `client_secret` set to a non-variable, non-reference literal.
-- `-----BEGIN … PRIVATE KEY-----` anywhere in tracked files.
-- Kubernetes `kind: Secret` with `data:`/`stringData:` literals in a tracked (non-SOPS, non-sealed) file.
-- Committed credential files: `*-key.json` service-account keys, `*.pem`, `kubeconfig`, `.env` with values.
-- Report location + secret **type** only — never echo the value (see `rules/secrets-hygiene.md`).
+**Secrets — BLOCKER.** Assignment-shaped `password`/`secret`/`token`/`api_key`/`access_key`/`private_key`/`client_secret` set to a literal · `BEGIN … PRIVATE KEY` in any tracked file · a `kind: Secret` with `data:`/`stringData:` literals in a tracked non-SOPS, non-sealed file · committed credential files (`*-key.json`, `*.pem`, `kubeconfig`, a valued `.env`).
+**Report location and secret type only — never the value.**
 
-### Mutable/unpinned references (WARNING)
-- Image `:latest`, `:main`, `:master`, or an image with no tag in a deployed workload.
-- Terraform provider/module without a pinned `version`/`?ref=`; Helm dependency without a pinned `version`.
-- ArgoCD `targetRevision: HEAD` / a branch name for a prod Application.
+**Mutable / unpinned — WARNING.** `:latest`/`:main`/`:master`/untagged images · providers, modules, or Helm dependencies with no pinned `version`/`?ref=` · `targetRevision: HEAD` or a branch on a prod Application.
 
-### Network exposure (BLOCKER/WARNING)
-- `0.0.0.0/0` or `::/0` in a security-group ingress, NetworkPolicy, or firewall rule — BLOCKER on an admin/DB port (22, 3389, 5432, 6379, 27017, 9200, 2379), WARNING otherwise (confirm it's a genuine public port).
-- Kubernetes `hostNetwork: true`, `privileged: true`, `hostPID`/`hostIPC: true`.
+**Network exposure.** `0.0.0.0/0` or `::/0` in an ingress, NetworkPolicy, or firewall rule — **BLOCKER on an admin or database port** (22, 3389, 5432, 6379, 27017, 9200, 2379), WARNING elsewhere pending confirmation that it's genuinely public · `hostNetwork`, `privileged`, `hostPID`/`hostIPC`.
 
-### IAM / access (WARNING)
-- Wildcard actions/resources (`"*"`), `roles/*admin`, `editor`, or `AdministratorAccess` bindings.
-- Terraform `iam` bindings granting broad roles to a service account.
+**IAM — WARNING.** Wildcard actions or resources · `roles/*admin`, `editor`, `AdministratorAccess` bound to a service account.
 
-### Reliability / state (WARNING)
-- Kubernetes workload with no `resources.requests`/`limits`.
-- Local Terraform state: `terraform.tfstate` tracked in git, or a `terraform {}` block with no `backend`.
-- Missing `prevent_destroy` on obviously stateful resources (DB instance, disk, bucket) when the diff replaces them.
+**Reliability and state — WARNING.** A workload with no requests/limits · `terraform.tfstate` tracked in git, or a `terraform {}` block with no `backend` · a stateful resource being replaced without `prevent_destroy`.
 
-### Destroy/replace hazards (BLOCKER)
-- In a diff: a stateful resource block removed, renamed, or with a changed `for_each`/`count` key.
-- Any `-target`, `-auto-approve`, or `terraform destroy` in a committed script/CI without a reviewed gate.
-
-## Method
-
-1. Scope: `git diff <base>...HEAD --name-only` for a change, or glob the tree for an audit. Restrict to infra file types (`*.tf`, `*.tfvars`, `*.yaml`, `*.yml`, `Chart.yaml`, `values*.yaml`, `*.json` under IaC dirs, CI files).
-2. Run the pattern families above with `grep -nE`. Keep each pattern tight to avoid noise; a false positive on a secret is cheap, a miss is not.
-3. For each hit, capture `file:line`, the matched pattern family, and the concrete impact.
+**Destroy/replace hazards — BLOCKER.** In a diff: a stateful resource block removed, renamed, or with a changed `for_each`/`count` key · `-target`, `-auto-approve`, or `destroy` in a committed script or CI job without a reviewed gate.
 
 ## Output
 
-```
-INFRA SAFETY SCAN — <N> findings (<b> blocker, <w> warning, <i> info)
+`file:line`, family, and the concrete impact, grouped BLOCKER / WARNING / INFO.
 
-BLOCKER
-- <file>:<line>  <family>  — <concrete impact>
-WARNING
-- <file>:<line>  <family>  — <concrete impact>
-INFO
-- <file>:<line>  <family>  — <note>
-
-Clean families: <the families that returned nothing>
-```
-
-State which families came back empty — a clean verdict needs evidence, not silence. Hand any deep secrets findings to `secrets-sentinel` and any plan-level hazards to the specialist reviewer.
+**State which families came back empty** — a clean verdict needs evidence, not silence. Hand deep secrets findings to `secrets-sentinel` and plan-level hazards to the specialist reviewer.

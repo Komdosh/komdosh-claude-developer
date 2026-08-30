@@ -38,11 +38,11 @@ Per the canonical contract: undecided ownership / source of truth / failure beha
 
 ### 5. Derive slices, then ordered todos
 
-Slices come from the service contract: modules/entrypoint, domain model + invariants, schema/migrations/jOOQ/transactions, sync APIs (OpenAPI), events (outbox/inbox, replay, DLQ), idempotency/retries/timeouts/reconciliation/degraded modes, security/privacy/audit, observability/alerts/runbooks, tests (unit/integration/contract/migration/replay/e2e smoke), docs + release readiness + rollout.
+Slices come from the service contract: modules/entrypoint · domain model + invariants · schema/migrations/transactions · sync APIs · events (outbox/inbox, replay, DLQ) · idempotency, retries, timeouts, reconciliation, degraded modes · security/privacy/audit · observability, alerts, runbooks · tests · docs, release readiness, rollout.
 
-Each todo: one coherent write scope, explicit dependencies, inputs to read (exact paths from the evidence inventory), concrete acceptance criteria, a verification command or review check, and the **executor column** — the marketplace agent or command that performs it (mapping table in `rules/agentic-plan.md`). Priorities: P0 blockers/correctness foundations, P1 required scope, P2 pre-release hardening, P3 post-milestone.
+Each todo carries one coherent write scope, explicit dependencies, exact input paths from the evidence inventory, concrete acceptance criteria, a verification command or review check, and its **executor** (mapping in `rules/agentic-plan.md`).
 
-Keep the plan whole-service: foundation, happy path, non-happy-path correctness, observability, tests, rollout, docs. Never bury correctness-sensitive work in a vague "hardening" phase.
+**Never bury correctness-sensitive work in a vague "hardening" phase.** Idempotency, replay, and reconciliation are P0/P1 scope, not polish.
 
 ### 6. Write the plan
 
@@ -70,4 +70,4 @@ In chat: Status (Draft / Ready for Review / Blocked), the top 3 blocking decisio
 | Missing durable cross-service decision | ADR blocker todo → architecture repo's `new-adr` playbook |
 | Plan approved, implementation starts | `/lifecycle orchestrate` (orchestrator) or `backend-implementer` (core) reading the plan |
 | One todo needs a within-service spec | `/analyze-requirements` (core) |
-| Plan needs prior-decision rationale | `/reveal` (kotlin-revealer) or `/doc-reveal` (kotlin-doc-revealer) |
+| Plan needs prior-decision rationale | `/reveal` or `/doc-reveal` (revealer) |

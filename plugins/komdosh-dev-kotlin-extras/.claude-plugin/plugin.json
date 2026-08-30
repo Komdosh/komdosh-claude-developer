@@ -1,8 +1,8 @@
 {
   "name": "komdosh-dev-kotlin-extras",
   "displayName": "Kotlin/Spring Extras",
-  "version": "0.3.0",
-  "description": "Niche tooling on top of komdosh-dev-spring-core — install only if you need any of these. Ships /upgrade (dependency-upgrader: bumps one library at a time in libs.versions.toml with changelog awareness, capped at 5 compile-fix iterations); /detect-flakes (flaky-test-detector: re-runs tests N times, classifies, appends to docs/flakes.md, routes to specialist); /load-test-new (load-test-scaffolder: scaffolds Gatling simulations). Requires komdosh-dev-spring-core.",
+  "version": "0.4.0",
+  "description": "Niche maintenance tooling on top of spring-core — install only if you need one. /upgrade bumps one library at a time with the changelog's breaking changes mapped to the files they affect. /detect-flakes re-runs tests until it can classify each as deterministic or flaky, with evidence. /load-test-new scaffolds a Gatling simulation. Each surfaces and classifies; the specialists fix. Requires komdosh-dev-spring-core.",
   "author": {
     "name": "Andrey Tabakov",
     "email": "ave.tabakov@gmail.com",

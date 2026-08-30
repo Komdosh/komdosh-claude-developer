@@ -1,7 +1,7 @@
 {
   "name": "komdosh-claude-developer",
-  "description": "Backend + infrastructure engineering suite for Claude Code \u2014 8 composable plugins. The Kotlin + Spring wave is four plugins: core (implementation, events, Avro), quality (security/PII audits, vendor-leak audit, QA artifacts), delivery (lifecycle gates, Jira entry, architecture-driven planning, two-track release engineering), and revealer (project knowledge + source documentation), plus kotlin-extras for niche maintenance tooling. The infrastructure wave is three: infra-core (safety, secrets, GitOps, and data-protection discipline plus cross-cutting review), infra-iac (Terraform/OpenTofu with the Yandex Cloud layer built in), and infra-k8s (Kubernetes hardening with ArgoCD delivery). Every auditor is read-only; nothing applies, deploys, or syncs on its own.",
-  "version": "0.5.0",
+  "description": "Backend and infrastructure engineering for Claude Code — 8 composable plugins. Four for Kotlin + Spring (core implementation, quality audits, delivery and release, knowledge retrieval) plus kotlin-extras for niche maintenance; three for infrastructure (shared safety and data-protection discipline, Terraform with Yandex Cloud, Kubernetes with ArgoCD). Every auditor is read-only at the tool layer; nothing applies, deploys, syncs, or publishes on its own.",
+  "version": "0.6.0",
   "owner": {
     "name": "Andrey Tabakov",
     "email": "ave.tabakov@gmail.com",
@@ -24,7 +24,7 @@
         "liquibase",
         "jooq"
       ],
-      "description": "The must-have foundation for Kotlin + Spring WebFlux/coroutines services: implementation, events, and Avro schemas in one plugin. 8 agents (backend-implementer, test-writer, cleanuper, integration-debugger, service-bootstrapper, event-consumer-author, avro-schema-author, and the read-only code-reviewer that reviews a diff at scope=diff or audits the whole service at scope=service) \u00b7 13 commands \u00b7 11 skills (coroutine-safety-scan, module-boundary-check, pii-safety-scan, liquibase-changeset-immutability, jooq-generation-freshness, pre-edit-impact-check, check-adr-required, read-service-context, run-verification, discover-avro-toolchain, verify-schema-compat) \u00b7 19 rule documents \u00b7 2 hooks. Enforces hexagonal boundaries, the 12 forbidden coroutine patterns, RFC 9457 errors, application-layer PII handling, event-consumer idempotency and DLQ policy, and Avro schema/registry discipline."
+      "description": "The foundation for Kotlin + Spring WebFlux services: implementing, verifying, and reviewing code inside one service — including its Kafka/SQS consumers and Avro schemas, which answer to the same hexagonal and coroutine rules. Enforces the 12 forbidden coroutine patterns, hexagonal module boundaries, RFC 9457 errors, application-layer PII handling, consumer idempotency and DLQ policy, and Avro schema/registry discipline. Grep-based preflight skills catch the mechanical violations in seconds, before a full Gradle cycle."
     },
     {
       "name": "komdosh-dev-spring-quality",
@@ -42,7 +42,7 @@
         "vendor-decoupling",
         "api"
       ],
-      "description": "The audit and QA-artifact suite on top of komdosh-dev-spring-core. 5 agents \u2014 security-auditor (route\u2194SecurityWebFilterChain coverage, RFC 9457 error leakage, JWT/JWK rotation, PII on the data-in-motion surface), platform-developer (vendor-coupling leaks in application/ and domain/, staged into a common/ module), and three QA writers (qa-plan-writer, qa-postman-writer, qa-console-writer) \u00b7 7 commands \u2014 /qa [plan|postman|console|all] from one shared API-surface discovery, /security-audit plus its four narrowed entry points (/auth-audit, /error-leakage-check, /jwt-rotation, /pii-leakage-check), and /audit-leaks \u00b7 4 skills \u00b7 2 rules. Read-only on the audit side: never modifies code, never extracts secrets, never prints personal data. Requires komdosh-dev-spring-core."
+      "description": "Audits and QA artifacts on top of spring-core. Finds out what is actually true about a finished service: which routes are unauthenticated, what leaks through error bodies, whether JWT validation is real, where personal data escapes in logs and events, and which vendor types have leaked into application code. Also generates the QA artifacts a human tester needs — a validation checklist, a Newman-runnable Postman collection, and a self-contained HTML console — from one API-surface discovery. Read-only on the audit side: never edits, never extracts a secret, never prints personal data. Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-spring-delivery",
@@ -60,7 +60,7 @@
         "planning",
         "gates"
       ],
-      "description": "Everything between 'a ticket exists' and 'the release PR is open'. Lifecycle orchestration (/lifecycle status|next|orchestrate|audit computes a gate map from real git state and recommends the next action; /recommend routes a task to the right marketplace capability), Jira-driven task entry (/jira-task pulls a ticket via the Atlassian MCP and walks its workflow forward), architecture-driven planning (/implementation-plan turns a service's architecture package into ordered agent todos), and two-track release engineering \u2014 service (/release-prep, /changelog, /version-bump, /release-notes, /rollback-playbook) and library (adds /abi-check, /publish-prep, /deprecate-api, with ABI-load-bearing version bumps). 4 agents \u00b7 12 commands \u00b7 11 skills \u00b7 2 rules. Never deploys, never pushes tags, never merges a PR. Requires komdosh-dev-spring-core."
+      "description": "Everything between 'a ticket exists' and 'the release PR is open'. Pulls work in from Jira, turns an architecture package into ordered agent todos, computes a lifecycle gate map from real git state and recommends the next action, and runs two-track release engineering — services get a rollback playbook, libraries get an ABI-load-bearing version bump. Never deploys, never pushes a tag, never merges a PR. Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-revealer",
@@ -76,7 +76,7 @@
         "javadoc",
         "context7"
       ],
-      "description": "Retrieval before invention \u2014 two ladders, one discipline: answer from a real source, cite it, and name the gaps instead of filling them. /reveal <query> surfaces accumulated project knowledge (ADRs, specs, plans, code-embedded DECISION/RATIONALE comments, commit archaeology, and any RAG/MCP knowledge base wired up \u2014 codebase-memory, Confluence/Notion/Linear, context7, ref-context) in survey / decision-trace / gap-find modes. /doc-reveal <symbol|topic|library> resolves source documentation cheapest-first (in-repo KDoc/Javadoc \u2192 project docs \u2192 local cache \u2192 MCP \u2192 canonical web docs \u2192 pre-indexed JAR listings \u2192 decompilation as a last resort), caching results so repeats are instant. 2 agents \u00b7 2 commands \u00b7 2 skills \u00b7 1 rule. Read-only on project source; degrades gracefully when no MCP is configured."
+      "description": "Retrieval before invention. /reveal surfaces what the project already decided — ADRs, specs, plans, decision comments, commit archaeology, and any RAG/MCP knowledge base wired up. /doc-reveal finds real documentation for a symbol or library, cheapest source first (in-repo KDoc, project docs, cache, MCP, canonical web docs, jar listings, decompilation last) and caches the result. Both cite their source and name the gaps instead of filling them; a gap is a result, an invented citation is the failure. Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-kotlin-extras",
@@ -91,7 +91,7 @@
         "load-testing",
         "gatling"
       ],
-      "description": "Niche tooling on top of komdosh-dev-spring-core \u2014 install only if you need any of these. Ships /upgrade (dependency-upgrader: bumps one library at a time in libs.versions.toml with changelog awareness, capped at 5 compile-fix iterations); /detect-flakes (flaky-test-detector: re-runs tests N times, classifies, appends to docs/flakes.md, routes to specialist); /load-test-new (load-test-scaffolder: scaffolds Gatling simulations). Requires komdosh-dev-spring-core."
+      "description": "Niche maintenance tooling on top of spring-core — install only if you need one. /upgrade bumps one library at a time with the changelog's breaking changes mapped to the files they affect. /detect-flakes re-runs tests until it can classify each as deterministic or flaky, with evidence. /load-test-new scaffolds a Gatling simulation. Each surfaces and classifies; the specialists fix. Requires komdosh-dev-spring-core."
     },
     {
       "name": "komdosh-dev-infra-core",
@@ -112,7 +112,7 @@
         "review",
         "safety"
       ],
-      "description": "Must-have foundation for infrastructure-as-code and GitOps work \u2014 the shared safety, secrets-hygiene, promotion, and data-protection discipline every infra plugin builds on. Ships three read-only agents (infra-reviewer \u2014 correctness \u00b7 security \u00b7 blast radius \u00b7 drift \u00b7 cost \u00b7 reversibility; secrets-sentinel \u2014 leak audit across every layer; data-protection-auditor \u2014 PII across the data lifecycle with 152-FZ + GDPR), three internal skills (discover-infra-context repo-mapper, infra-safety-scan and pii-exposure-scan grep preflights), six rule documents (iac-safety, secrets-hygiene, gitops-principles, environment-promotion, infra-review, pii-data-protection), a millisecond-scale SessionStart context hook, and a recommended read-only permission set. Standalone \u2014 no cloud or language assumptions; the terraform, kubernetes, argocd, and yandex plugins depend on it."
+      "description": "The foundation for infrastructure-as-code and GitOps: the shared safety, secrets, promotion, and data-protection discipline the other infra plugins build on. Every action obeys one contract — render the desired state, review the blast radius, apply only the reviewed artifact. Three read-only agents review a change across six dimensions, hunt exposed secrets across every layer, and audit personal data across the infrastructure lifecycle under both 152-FZ and GDPR. Read-only at the tool layer, not merely by convention. No cloud or language assumptions."
     },
     {
       "name": "komdosh-dev-infra-iac",
@@ -131,7 +131,7 @@
         "iam",
         "data-residency"
       ],
-      "description": "Terraform and OpenTofu authoring, plan-safety analysis, and state discipline \u2014 with the Yandex Cloud resource layer built in. Ships iac-author (module structure, pinned providers, for_each over count by stable key, remote encrypted state, prevent_destroy on stateful resources; on YC: VPC with per-zone subnets and default-deny security groups, Managed K8s with regional HA masters, Managed PostgreSQL/Kafka/Redis with HA + backups, Lockbox + KMS, Container Registry, least-privilege IAM) and the read-only iac-reviewer (correctness \u00b7 state safety \u00b7 security \u00b7 cost \u00b7 drift; on YC: IAM over-grants, SA-key exposure, network exposure, managed-DB HA, zonal masters in prod, Audit Trails, and PII residency under 152-FZ and GDPR). Four skills: discover-terraform-layout, verify-plan-safety (classifies every create/update/replace/destroy and flags forces-replacement before apply), discover-yc-context, verify-yc-resources. Seven rules: terraform-style, terraform-state-safety, terraform-plan-review, yc-terraform, yc-security, yc-managed-services, yc-data-residency. Six commands: /tf-module, /tf-plan-review, /tf-audit, /yc-provision, /yc-audit, /yc-context. Uses the Terraform registry MCP for current versions. Never runs apply or destroy. Requires komdosh-dev-infra-core."
+      "description": "Terraform and OpenTofu authoring, plan-safety analysis, and state discipline, with the Yandex Cloud resource layer built in. One agent writes and one reviews, and they never overlap. The reviewer anchors on the plan rather than the source, because destroys and replaces hide there — an additive-looking diff can produce a forced replacement that destroys a database. Secure-and-HA by default on YC: regional K8s masters, HA managed databases with backups, Lockbox and KMS, least-privilege IAM, and 152-FZ data residency. Never runs apply or destroy. Requires komdosh-dev-infra-core."
     },
     {
       "name": "komdosh-dev-infra-k8s",
@@ -149,7 +149,7 @@
         "applicationset",
         "delivery"
       ],
-      "description": "Kubernetes manifest authoring, security hardening, workload troubleshooting, and ArgoCD GitOps delivery. Ships three agents \u2014 k8s-author (hardened Deployments/StatefulSets, Kustomize overlays, Helm values, all three probes, PDB, topology spread, graceful shutdown; plus ArgoCD Application/ApplicationSet/AppProject with pinned prod revisions, scoped projects, prune+selfHeal, sync waves), the read-only k8s-auditor (Pod Security Standards restricted + resource discipline + reliability on the rendered manifests, plus GitOps hygiene \u2014 moving prod revisions, default projects, inline secrets, drift-hiding ignoreDifferences), and the read-only k8s-diagnostician (root-cause diagnosis of CrashLoopBackOff / ImagePullBackOff / OOMKilled / Pending / probe failures, and of OutOfSync / Degraded / stuck-Progressing / drifting apps \u2014 separating sync status from health status). Four skills: discover-k8s-workloads, probe-cluster-state, discover-argocd-apps, probe-app-health. Five rules: k8s-manifests, k8s-security, k8s-resources, argocd-applications, gitops-delivery. Six commands: /k8s-manifest, /k8s-audit, /k8s-debug, /argo-app, /argo-audit, /argo-diagnose. Never mutates a cluster and never syncs out of band \u2014 rollback is git revert. Requires komdosh-dev-infra-core."
+      "description": "Kubernetes manifests, hardening, workload troubleshooting, and ArgoCD delivery. Three agents with disjoint verbs — author, auditor, diagnostician — split by what you are doing rather than which tool, so a Deployment and the Application that ships it stay one change. Author and auditor work on the rendered manifest, because an overlay can silently drop a hardening patch the base contains. The diagnostician separates sync status from health status and refuses workarounds that hide a symptom. Never mutates a cluster; rollback is git revert. Requires komdosh-dev-infra-core."
     }
   ]
 }

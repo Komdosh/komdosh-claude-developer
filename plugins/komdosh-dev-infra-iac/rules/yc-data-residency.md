@@ -1,43 +1,29 @@
 # Yandex Cloud Data Residency (152-FZ) & PII at Rest
 
-Yandex Cloud is the natural home for Russian personal data because its regions are in Russia — which is exactly what **152-FZ localization** requires. This rule makes that concrete and connects it to the GDPR tension. It specialises infra-core's `rules/pii-data-protection.md` for the YC stack; read that first for the classification taxonomy and the two-regime overview.
+Specialises infra-core's `rules/pii-data-protection.md` for the YC stack — read that first for the classification taxonomy and the two-regime overview.
 
-> **Not legal advice** — engineering obligations, confirm specifics with counsel / your DPO.
+> **Not legal advice** — engineering obligations; confirm with counsel or your DPO.
 
-## The 152-FZ localization rule, concretely
+## Localization, concretely
 
-152-FZ (Art. 18.5, via 242-FZ) requires that the **recording, systematization, accumulation, storage, updating, and retrieval** of the personal data of citizens of the Russian Federation is done using databases **physically located in Russia**. Yandex Cloud's `ru-central1` region (zones `ru-central1-a` / `-b` / `-d`) satisfies the physical-location requirement.
+152-FZ requires that recording, systematization, accumulation, storage, updating, and retrieval of **RU citizens' personal data** happen in databases **physically located in Russia**. `ru-central1` satisfies that.
 
-What this means for the Terraform you write:
+In the Terraform you write:
 
-- **Pin Russian-personal-data stores to `ru-central1`.** Managed PostgreSQL/MySQL/Kafka/Redis/OpenSearch clusters, disks, and Object Storage buckets that hold RU-citizen PII declare `ru-central1` zones/region — never a non-RU region for the primary store. A PII store provisioned outside Russia is a localization BLOCKER.
-- **The *primary* store is the one that matters.** Localization governs where RU personal data is first recorded and kept. Backups and replicas of that data must also stay in-region (a cross-region backup of a localized store re-exports the data).
-- **Cross-border transfer comes *after* localization, not instead of it.** 152-FZ allows transfer abroad once the in-Russia copy exists, subject to notification/consent and the destination's protection level. It never permits skipping the in-Russia store.
+- **Pin RU-personal-data stores to `ru-central1`** — managed clusters, disks, and buckets. A PII store provisioned outside Russia is a localization **BLOCKER**.
+- **The primary store is what localization governs** — and **backups and replicas must stay in-region too**, because a cross-region backup re-exports the data.
+- **Cross-border transfer comes *after* localization, never instead of it.** Transfer abroad is permitted once the in-Russia copy exists, subject to notification and the destination's protection level. It never licenses skipping the in-Russia store.
 
 ## PII-at-rest controls on YC
 
-Every YC store holding personal data (`rules/pii-data-protection.md` §controls, made specific):
+**KMS** on managed-service disks, buckets, and the state that references them — unencrypted PII at rest is a BLOCKER · **Lockbox** for every credential reaching a PII store · **private access**, no public IP, TLS enforced — a publicly reachable PII store is a BLOCKER · **least-privilege IAM** with no `editor`/`admin` on a PII data path · **backups in-region, encrypted, retention stated**, and reachable by erasure or crypto-shred · **Audit Trails**, which is what makes 152-FZ's 24h/72h breach timeline achievable at all.
 
-- **KMS encryption** (`yandex_kms_symmetric_key`) on managed-service disks, Object Storage buckets, and the state that references them. Unencrypted PII at rest is a BLOCKER.
-- **Lockbox** for the credentials that reach PII stores; never inline (infra-core `rules/secrets-hygiene.md`).
-- **Private access** — no public IP on a PII database; reachable only from the app subnets/SG; TLS enforced. A publicly-reachable PII store is a BLOCKER.
-- **Least-privilege IAM** — access to a PII store's service account/role is scoped and audited; no `editor`/`admin` on a PII data path (`rules/yc-security.md`).
-- **Backups with residency + retention** — automated backups in-region, encrypted, with a stated retention that matches the data-protection retention policy; erasure must be able to reach or crypto-shred them.
-- **Audit Trails** on the folder so reads/exports of PII are logged — this is what makes the 152-FZ breach-notification timeline (24h detection notice / 72h investigation results) achievable.
+## The divergence
 
-## The 152-FZ ⇄ GDPR divergence on YC
+**152-FZ pulls** RU-citizen data **into** `ru-central1`. **GDPR restricts** moving EU-subject data **to** Russia — no adequacy decision, so an EU→RU transfer needs SCCs with supplementary measures or a derogation, neither of which sustains routine storage.
 
-This is the architectural trap for a service with both RU and EU users:
+**Therefore: do not commingle EU-subject and RU-citizen personal data in one `ru-central1` store.** Partition by jurisdiction, with a documented lawful basis for anything that does cross. **EU personal data in `ru-central1` with no transfer basis is a compliance BLOCKER to flag for legal review** — not a decision this plugin makes.
 
-- **152-FZ pulls** RU-citizen personal data **into** `ru-central1`.
-- **GDPR restricts** moving EU-subject personal data **to** Russia — Russia has no EU adequacy decision, so an EU→RU transfer needs SCCs + supplementary measures or an Art. 49 derogation, which for routine storage is hard to sustain.
+## What the reviewers check
 
-Therefore: **do not commingle EU-subject and RU-citizen personal data in one `ru-central1` store.** Partition by jurisdiction — RU personal data in `ru-central1`, EU-subject personal data in a GDPR-appropriate EU-based store (outside YC if YC has no compliant EU region for your case) — with a documented lawful basis for anything that does cross. An architecture that puts EU personal data into `ru-central1` without a transfer basis is a compliance BLOCKER to flag for legal review.
-
-## What `iac-reviewer` / `verify-yc-resources` check
-
-- PII-named managed stores/buckets pinned to `ru-central1` (localization) and KMS-encrypted (at-rest).
-- No public IP / `0.0.0.0/0` reach on a PII store.
-- Backups in-region, encrypted, retention stated; `prevent_destroy` on the data cluster.
-- Least-privilege IAM on the PII data path; Audit Trails enabled.
-- Signals of EU + RU personal data in one region without a transfer basis → flag for legal review.
+PII-named stores pinned to `ru-central1` and KMS-encrypted · no public reach · backups in-region, encrypted, retention stated, `prevent_destroy` on the data cluster · least-privilege IAM on the data path · Audit Trails on · any EU+RU commingling flagged for legal review.

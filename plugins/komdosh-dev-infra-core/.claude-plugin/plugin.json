@@ -1,8 +1,8 @@
 {
   "name": "komdosh-dev-infra-core",
   "displayName": "Infrastructure Core",
-  "version": "0.1.0",
-  "description": "Must-have foundation for infrastructure-as-code and GitOps work — the shared safety, secrets-hygiene, promotion, and data-protection discipline every infra plugin builds on. Ships three read-only agents (infra-reviewer — correctness · security · blast radius · drift · cost · reversibility; secrets-sentinel — leak audit across every layer; data-protection-auditor — PII across the data lifecycle with 152-FZ + GDPR), three internal skills (discover-infra-context repo-mapper, infra-safety-scan and pii-exposure-scan grep preflights), six rule documents (iac-safety, secrets-hygiene, gitops-principles, environment-promotion, infra-review, pii-data-protection), a millisecond-scale SessionStart context hook, and a recommended read-only permission set. Standalone — no cloud or language assumptions; the terraform, kubernetes, argocd, and yandex plugins depend on it.",
+  "version": "0.2.0",
+  "description": "The foundation for infrastructure-as-code and GitOps: the shared safety, secrets, promotion, and data-protection discipline the other infra plugins build on. Every action obeys one contract — render the desired state, review the blast radius, apply only the reviewed artifact. Three read-only agents review a change across six dimensions, hunt exposed secrets across every layer, and audit personal data across the infrastructure lifecycle under both 152-FZ and GDPR. Read-only at the tool layer, not merely by convention. No cloud or language assumptions.",
   "author": {
     "name": "Andrey Tabakov",
     "email": "ave.tabakov@gmail.com",

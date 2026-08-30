@@ -1,76 +1,37 @@
 # Kubernetes Manifest Conventions
 
-Shape and reliability rules for workload manifests. Security is in `rules/k8s-security.md`; sizing is in `rules/k8s-resources.md`; this file is about correct, operable workloads.
+Correct, operable workloads. Security is `rules/k8s-security.md`; sizing is `rules/k8s-resources.md`.
 
 ## Workload type
 
-- **Deployment** — stateless, interchangeable replicas (APIs, workers). The default.
-- **StatefulSet** — stable identity + per-replica storage (databases, brokers). Use only when a pod needs a stable name/PVC/ordinal; otherwise Deployment.
-- **DaemonSet** — one per node (log/metric agents, CNI).
-- **Job/CronJob** — run-to-completion / scheduled. Set `backoffLimit`, `activeDeadlineSeconds`, and (CronJob) `concurrencyPolicy` + `startingDeadlineSeconds`.
+**Deployment** is the default — stateless, interchangeable replicas. **StatefulSet** only when a pod genuinely needs a stable name, PVC, or ordinal. **DaemonSet** for node agents. **Job/CronJob** with `backoffLimit`, `activeDeadlineSeconds`, and — for CronJob — `concurrencyPolicy` and `startingDeadlineSeconds`.
 
-## Labels — the recommended set
+## Labels
 
-Every object carries the standard labels so selectors, dashboards, and cost tooling work:
+The standard `app.kubernetes.io/*` set — `name`, `instance`, `component`, `part-of`, `managed-by` — on every object, so selectors, dashboards, and cost tooling work.
 
-```yaml
-metadata:
-  labels:
-    app.kubernetes.io/name: order-service
-    app.kubernetes.io/instance: order-service-prod
-    app.kubernetes.io/component: api
-    app.kubernetes.io/part-of: commerce
-    app.kubernetes.io/managed-by: argocd
-```
-
-A Deployment's `spec.selector.matchLabels` must be a **stable subset** of the pod labels — selectors are immutable after creation, so a wrong selector forces a delete+recreate.
+**A Deployment's `spec.selector.matchLabels` must be a stable subset of the pod labels.** Selectors are immutable after creation, so getting one wrong forces a delete-and-recreate.
 
 ## Images
 
-- **Immutable references only** — a digest (`@sha256:…`) or a unique semver/commit tag. Never `:latest`, `:main`, or untagged (see infra-core `rules/iac-safety.md`).
-- `imagePullPolicy: IfNotPresent` with an immutable tag; `Always` only if you (wrongly) use mutable tags.
-- Private registries reference an `imagePullSecrets` that comes from a secret store, never a committed plaintext secret.
+**Immutable references only** — a digest or a unique tag; never `:latest`, `:main`, or untagged. `imagePullPolicy: IfNotPresent` follows from that. Pull secrets come from a secret store.
 
-## Probes — all three have distinct jobs
+## The three probes do different jobs
 
-```yaml
-startupProbe:      # slow starters: gates liveness until the app is up; prevents early kills
-  httpGet: { path: /healthz, port: 8080 }
-  failureThreshold: 30
-  periodSeconds: 5
-readinessProbe:    # gates traffic: fail → removed from Service endpoints, not killed
-  httpGet: { path: /readyz, port: 8080 }
-  periodSeconds: 5
-livenessProbe:     # gates restart: fail → kubelet kills the container
-  httpGet: { path: /healthz, port: 8080 }
-  periodSeconds: 10
-```
+- **`startupProbe`** gates liveness while a slow app boots — use it instead of a large `livenessProbe.initialDelaySeconds`.
+- **`readinessProbe`** gates *traffic*: failing removes the pod from Service endpoints.
+- **`livenessProbe`** gates *restarts*: failing kills the container.
 
-- **Readiness ≠ liveness.** Readiness controls traffic; liveness controls restarts. Pointing liveness at a dependency check causes restart storms when a downstream is slow — liveness should test only "is this process wedged."
-- Use `startupProbe` for slow boots instead of a large `livenessProbe.initialDelaySeconds`.
+**Readiness ≠ liveness, and liveness must not check a dependency.** A liveness probe that tests a downstream causes restart storms whenever that downstream is slow — it should only answer "is this process wedged".
 
 ## Graceful shutdown
 
-```yaml
-spec:
-  terminationGracePeriodSeconds: 30
-  containers:
-    - name: app
-      lifecycle:
-        preStop:
-          exec: { command: ["sh", "-c", "sleep 5"] }   # let the LB deregister before SIGTERM handling ends
-```
+`terminationGracePeriodSeconds` plus a `preStop` sleep long enough for the load balancer to deregister, and an app that handles `SIGTERM`: stop accepting work, drain, exit. **A pod that ignores SIGTERM is SIGKILLed and drops requests on every rollout.**
 
-The app must handle `SIGTERM`: stop accepting new work, drain in-flight requests, exit before the grace period. A pod that ignores SIGTERM is SIGKILLed and drops requests on every rollout.
+## Rollout and disruption
 
-## Rollout, disruption, and spread
-
-- **Deployment strategy** — `RollingUpdate` with explicit `maxUnavailable`/`maxSurge`; never leave a critical service able to drop to zero ready pods mid-rollout.
-- **PodDisruptionBudget** — every multi-replica workload has a PDB (`minAvailable`/`maxUnavailable`) so node drains and cluster upgrades can't evict all replicas at once.
-- **Topology spread / anti-affinity** — spread replicas across nodes/zones so one node or zone loss doesn't take the whole service down.
-- **HorizontalPodAutoscaler** — for elastic workloads, scale on a real signal (CPU/memory/custom); set sane `minReplicas`/`maxReplicas`.
+`RollingUpdate` with explicit `maxUnavailable`/`maxSurge` — **never let a critical service reach zero ready pods mid-rollout** · a **PodDisruptionBudget** on every multi-replica workload, so a node drain or cluster upgrade can't evict every replica at once · topology spread or anti-affinity across nodes and zones · an HPA on a real signal with sane bounds for elastic workloads.
 
 ## Configuration
 
-- Non-secret config in `ConfigMap`; secrets never in a ConfigMap and never plaintext (see `rules/secrets-hygiene.md`).
-- Prefer projecting config as files or explicit env; changing a ConfigMap does not restart pods by itself — use a checksum annotation or a controller that rolls on change.
+Non-secret config in a ConfigMap; secrets never there and never plaintext. **Changing a ConfigMap does not restart pods** — use a checksum annotation or a controller that rolls on change, or the new config silently never takes effect.

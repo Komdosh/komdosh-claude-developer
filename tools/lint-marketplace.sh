@@ -10,7 +10,7 @@
 #   1. JSON validity for every plugin.json + every hooks.json + marketplace.json.
 #   2. plugin.json `name` matches its directory.
 #   3. Every plugin in marketplace.json points at an existing directory.
-#   4. Frontmatter on every agent/command/skill: has name + description; agents have model.
+#   4. Frontmatter: agents/skills have name + description (agents also model); commands have description.
 #   5. Markdown links inside CLAUDE.md resolve to actual files.
 #   6. No double-dash directory names under skills/ (e.g. `verify-something--service`).
 #   7. Hook .sh files: bash syntax OK, executable bit set.
@@ -83,17 +83,20 @@ done < <(jq -c '.plugins[]' .claude-plugin/marketplace.json 2>/dev/null)
 
 # ---------------------------------------------------------------------
 section "4. Frontmatter on agents / commands / skills"
-for f in plugins/*/agents/*.md plugins/*/skills/*/SKILL.md; do
+for f in plugins/*/agents/*.md plugins/*/commands/*.md plugins/*/skills/*/SKILL.md; do
   [ -f "$f" ] || continue
   fm=$(awk '/^---$/{c++; next} c==1{print} c==2{exit}' "$f")
   has_name=$(echo "$fm" | grep -cE '^name:\s+' || true)
   has_desc=$(echo "$fm" | grep -cE '^description:\s+' || true)
   case "$f" in
-    *agents*) has_model=$(echo "$fm" | grep -cE '^model:\s+' || true)
-              if [ "$has_name" -eq 1 ] && [ "$has_desc" -eq 1 ] && [ "$has_model" -eq 1 ]; then pass "$f"
-              else fail "$f — missing name|description|model in frontmatter"; fi ;;
-    *)        if [ "$has_name" -eq 1 ] && [ "$has_desc" -eq 1 ]; then pass "$f"
-              else fail "$f — missing name|description in frontmatter"; fi ;;
+    *agents*)   has_model=$(echo "$fm" | grep -cE '^model:\s+' || true)
+                if [ "$has_name" -eq 1 ] && [ "$has_desc" -eq 1 ] && [ "$has_model" -eq 1 ]; then pass "$f"
+                else fail "$f — missing name|description|model in frontmatter"; fi ;;
+    *commands*) # commands take their name from the filename; only description is required
+                if [ "$has_desc" -eq 1 ]; then pass "$f"
+                else fail "$f — missing description in frontmatter (shown in the / menu)"; fi ;;
+    *)          if [ "$has_name" -eq 1 ] && [ "$has_desc" -eq 1 ]; then pass "$f"
+                else fail "$f — missing name|description in frontmatter"; fi ;;
   esac
 done
 
@@ -241,7 +244,7 @@ done
 
 # ---------------------------------------------------------------------
 section "14. Frontmatter description budget (entry cap 1536 chars)"
-for f in plugins/*/agents/*.md plugins/*/skills/*/SKILL.md; do
+for f in plugins/*/agents/*.md plugins/*/commands/*.md plugins/*/skills/*/SKILL.md; do
   [ -f "$f" ] || continue
   len=$(awk '/^---$/{c++; next} c==1' "$f" | grep -E '^description:' | head -1 | wc -c | tr -d ' ')
   if [ "$len" -gt 1536 ]; then

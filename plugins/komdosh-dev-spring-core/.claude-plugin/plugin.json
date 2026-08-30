@@ -1,8 +1,8 @@
 {
   "name": "komdosh-dev-spring-core",
   "displayName": "Kotlin + Spring Core",
-  "version": "0.4.0",
-  "description": "The must-have foundation for Kotlin + Spring WebFlux/coroutines services: implementation, events, and Avro schemas in one plugin. 8 agents (backend-implementer, test-writer, cleanuper, integration-debugger, service-bootstrapper, event-consumer-author, avro-schema-author, and the read-only code-reviewer that reviews a diff at scope=diff or audits the whole service at scope=service) \u00b7 13 commands \u00b7 11 skills (coroutine-safety-scan, module-boundary-check, pii-safety-scan, liquibase-changeset-immutability, jooq-generation-freshness, pre-edit-impact-check, check-adr-required, read-service-context, run-verification, discover-avro-toolchain, verify-schema-compat) \u00b7 19 rule documents \u00b7 2 hooks. Enforces hexagonal boundaries, the 12 forbidden coroutine patterns, RFC 9457 errors, application-layer PII handling, event-consumer idempotency and DLQ policy, and Avro schema/registry discipline.",
+  "version": "0.5.0",
+  "description": "The foundation for Kotlin + Spring WebFlux services: implementing, verifying, and reviewing code inside one service — including its Kafka/SQS consumers and Avro schemas, which answer to the same hexagonal and coroutine rules. Enforces the 12 forbidden coroutine patterns, hexagonal module boundaries, RFC 9457 errors, application-layer PII handling, consumer idempotency and DLQ policy, and Avro schema/registry discipline. Grep-based preflight skills catch the mechanical violations in seconds, before a full Gradle cycle.",
   "author": {
     "name": "Andrey Tabakov",
     "email": "ave.tabakov@gmail.com",

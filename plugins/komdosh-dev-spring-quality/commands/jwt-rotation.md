@@ -1,51 +1,15 @@
+---
+description: Audit JWT/JWK plumbing — decoder presence, algorithm allowlist, JWK refresh, issuer and audience validation, expiry enforcement, and test-fixture keys.
+---
+
 # /jwt-rotation
 
-Audit JWT/JWK plumbing: `ReactiveJwtDecoder` presence, algorithm allowlist, JWK source refresh, issuer + audience validators, expiration enforcement, no production keys in test fixtures.
+`security-auditor --scope=jwt`. Narrow slice of `/security-audit`.
 
-Narrow scope of `/security-audit`. Returns INFO ("not applicable") if the project doesn't use Spring Security OAuth2 resource server.
+`read-service-context` first; refuse on the library track. **No OAuth2 resource server → return INFO "not applicable" and stop** — that is not a gap.
 
-## Steps
+Checks and severities are in `rules/security-audit.md`. The two that matter most and are most often missing: `none` in the algorithm allowlist, and **issuer/audience validation** — a token signed with the right key but issued for another audience must be rejected, and signature-only verification accepts it.
 
-- [ ] **Step 1: Load service context**
+**Never read or print key material.** Report configuration shape only.
 
-Run `read-service-context` if not already run. Refuse on library track.
-
-- [ ] **Step 2: Invoke `security-auditor` with `--scope=jwt`**
-
-The agent runs `audit-jwt-rotation`. The skill emits `applicable: false` if no JWT decoder dependency is detected — surface that as INFO and stop.
-
-- [ ] **Step 3: Print findings**
-
-```
-== JWT/JWK Audit ==
-
-Decoder:        boot/JwtConfig.kt:18 (NimbusReactiveJwtDecoder.withJwkSetUri)
-Issuer:         https://issuer.example.com/.well-known/jwks.json
-Algorithms:     [RS256]                                                  ✓
-Issuer check:   YES                                                      ✓
-Audience check: YES                                                      ✓
-exp enforced:   YES (default)                                            ✓
-JWK refresh:    default Nimbus cache (5 min) + on-unknown-kid refresh    ✓
-
-Findings: 1
-
-  WARNING — src/test/resources/application-test.yaml:12 references JWT_SIGNING_KEY env var.
-  Confirm test fixtures do NOT reuse the production key. Recommended: use a
-  fresh RSA key pair per test class via JWKSource fixtures from nimbus-jose-jwt.
-```
-
-- [ ] **Step 4: Suggest fixes**
-
-| Finding | Recommended remediation |
-|---|---|
-| `none` algorithm allowed | Edit the decoder config to explicitly set `jwsAlgorithms { it.add(SignatureAlgorithm.RS256) }` (or your asymmetric set). Re-run audit. |
-| Symmetric + asymmetric in the same allowlist | Pick one. Asymmetric (`RS*` / `ES*`) is the default for OAuth2 resource servers. |
-| Missing issuer validator (multi-issuer service) | Add `JwtIssuerValidator(...)` to a `DelegatingOAuth2TokenValidator`. |
-| Missing audience validator (audience-scoped tokens) | Add `JwtClaimValidator<List<String>>("aud") { it.contains("<service-name>") }`. |
-| Test fixtures using prod-shaped keys | Refactor to generate per-test RSA pairs (`JWKSet.generate()` from nimbus-jose-jwt). |
-
-These are configuration changes — apply directly in `boot/JwtConfig.kt` (or wherever the decoder is wired). After the fix, re-run `/jwt-rotation` to confirm.
-
-- [ ] **Step 5: Write the report**
-
-Output: `docs/security/jwt-rotation-YYYY-MM-DD.md`.
+Write `docs/security/jwt-rotation-YYYY-MM-DD.md`.

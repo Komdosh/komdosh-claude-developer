@@ -7,15 +7,15 @@ description: Map a Terraform/OpenTofu codebase into a structured descriptor — 
 
 # Discover Terraform Layout
 
-Build the structural picture of a Terraform/OpenTofu codebase so downstream work fits the existing conventions rather than inventing new ones. Read-only. Track as a todo when invoked.
+Build the structural picture of a Terraform/OpenTofu codebase so downstream work fits the existing conventions rather than inventing new ones. Read-only.
 
-## Step 1: Detect Terraform vs OpenTofu, and the roots
+## 1. Detect Terraform vs OpenTofu, and the roots
 
 - Glob for `*.tf`, `*.tf.json`, `.terraform.lock.hcl`.
 - A **root module** is a directory that declares a `backend` and/or is where `apply` runs (often `envs/*/`, `live/*/`, or the repo root). A **child module** is referenced via `module "…" { source = … }` and never applied directly.
 - Record whether the toolchain is Terraform or OpenTofu (`tofu` presence, `.terraform.lock.hcl`, provider registries). They share syntax; note which so commands use the right binary.
 
-## Step 2: Read backend configuration
+## 2. Read backend configuration
 
 For each root module, read the `terraform { backend "…" {} }` block:
 
@@ -24,16 +24,16 @@ For each root module, read the `terraform { backend "…" {} }` block:
 - **Encryption**: `encrypt = true` for S3, bucket-level encryption, or unknown.
 - One state per lifecycle+env, or one giant state (blast-radius finding).
 
-## Step 3: Providers and version pinning
+## 3. Providers and version pinning
 
 - Read every `required_providers`: source + version constraint. Flag any provider with no `version` (unpinned — finding).
 - Read `required_version`. Flag its absence.
 - Note whether `.terraform.lock.hcl` is committed (it should be).
-- Identify the cloud(s) the providers target — hand YC-provider specifics to the `komdosh-dev-infra-iac` plugin when present.
+- Identify the cloud(s) the providers target; the `yc-*` rules bind when `yandex` is among them.
 
-## Step 4: Environment layout
+## 4. Environment layout
 
-Determine how environments are separated (see `rules/environment-promotion.md` in infra-core):
+Determine how environments are separated (infra-core's `rules/environment-promotion.md`):
 
 - **Directory-per-env** — `envs/{dev,staging,prod}/` each a root module with its own state + tfvars (preferred; clearest blast-radius isolation).
 - **Workspaces** — one root, `terraform workspace` per env (record; note the shared-backend caveat).
@@ -41,12 +41,12 @@ Determine how environments are separated (see `rules/environment-promotion.md` i
 
 Record env names and mechanism. Flag prod sharing a state file with non-prod.
 
-## Step 5: Cross-module coupling
+## 5. Cross-module coupling
 
 - Find `data "terraform_remote_state"` blocks — these couple root modules (e.g. `app` reads `network`'s outputs). Map the dependency graph; it dictates apply order and blast radius.
 - Note `module` sources pinned by `?ref=` vs floating (finding).
 
-## Step 6: Return the descriptor
+## 6. Return the descriptor
 
 ```json
 {
